@@ -11,7 +11,7 @@ export function BrowserView() {
   ];
 
   return (
-    <div className="h-full flex flex-col bg-zinc-100 dark:bg-gray-800 p-4 md:p-6 overflow-auto">
+    <div className="h-full flex flex-col bg-zinc-100 dark:bg-neutral-800 p-4 md:p-6 overflow-auto"> {/* Changed dark:bg-gray-800 to dark:bg-neutral-800 */}
       {/* Main Content */}
       <div className="flex-1 w-full">
         <Card className="bg-gradient-to-br from-purple-500 via-purple-600 to-purple-700 text-white shadow-xl rounded-lg mb-8">
