@@ -22,7 +22,7 @@ export function ChatMessageItem({ message }: { message: ChatMessage }) {
             'p-3 rounded-lg shadow-md',
             isUser
               ? 'bg-gradient-to-r from-[hsl(250_70%_25%)] to-[hsl(var(--primary))] text-primary-foreground rounded-br-none'
-              : 'bg-gradient-to-b from-black/10 via-black/20 to-black/30 backdrop-blur-md border border-white/10 text-secondary-foreground rounded-bl-none'
+              : 'bg-gradient-to-b from-black/5 via-black/15 to-black/25 backdrop-blur-md border border-white/10 text-secondary-foreground rounded-bl-none'
           )}
         >
           <p className="text-sm whitespace-pre-wrap break-words">{message.text}</p>
