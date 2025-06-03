@@ -802,7 +802,7 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
             variant="outline"
             size="icon"
             title="Attach file"
-            className="bg-card text-[hsl(250_70%_25%)] border-[hsl(250_70%_25%)] hover:bg-[hsl(250_70%_25%)]/10 hover:text-[hsl(250_70%_25%)]"
+            className="bg-white text-[hsl(250_70%_25%)] border-[hsl(250_70%_25%)] hover:bg-[hsl(250_70%_25%)]/10 hover:text-[hsl(250_70%_25%)]"
             disabled={isLoading}
           >
             <Paperclip className="h-5 w-5" />
@@ -811,7 +811,7 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
             variant="outline"
             size="icon"
             title="Text-to-Speech"
-            className="bg-card text-[hsl(250_70%_25%)] border-[hsl(250_70%_25%)] hover:bg-[hsl(250_70%_25%)]/10 hover:text-[hsl(250_70%_25%)]"
+            className="bg-white text-[hsl(250_70%_25%)] border-[hsl(250_70%_25%)] hover:bg-[hsl(250_70%_25%)]/10 hover:text-[hsl(250_70%_25%)]"
             disabled={isLoading}
           >
             <Volume2 className="h-5 w-5" />
@@ -842,3 +842,5 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
     </div>
   );
 }
+
+    
