@@ -1,12 +1,12 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Folder, File, ChevronRight, PanelLeftClose, PanelRightClose, Play, Eye, TerminalIcon, Code2Icon } from 'lucide-react';
+import { Folder, File, ChevronRight, PanelLeftClose, PanelRightClose, Eye, TerminalIcon, Code2Icon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIdeContext } from '@/contexts/IdeContext';
 
@@ -50,7 +50,11 @@ const FileTreeItem = ({ item, level = 0, onFileSelect }: FileTreeItemProps) => {
     if (item.type === 'folder') {
       setIsOpen(!isOpen);
     }
-    onFileSelect(item.name, item.content);
+    if (item.type === 'file' || (item.type === 'folder' && !isOpen)) {
+      onFileSelect(item.name, item.content);
+    } else if (item.type === 'folder' && isOpen) {
+      onFileSelect(item.name, undefined); 
+    }
   };
 
   return (
@@ -80,33 +84,81 @@ const FileTreeItem = ({ item, level = 0, onFileSelect }: FileTreeItemProps) => {
 
 export function DevelopView() {
   const [isExplorerOpen, setIsExplorerOpen] = useState(true);
-  const [selectedFileName, setSelectedFileName] = useState('GFR_Calculator.html'); // Default selected file name
-  const { ideCode, setIdeCode, activeDevelopTab, setActiveDevelopTab } = useIdeContext();
-  const [iframeKey, setIframeKey] = useState(0); // Key to force iframe refresh
+  const [selectedFileName, setSelectedFileName] = useState('IDE Editor'); 
+  const { ideCode, setIdeCode, activeDevelopTab, setActiveDevelopTab, isExternalUpdate, setIsExternalUpdate } = useIdeContext();
+  
+  const [animatedIdeCode, setAnimatedIdeCode] = useState('');
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const typingSpeed = 15; 
 
   useEffect(() => {
-    // When ideCode changes (e.g., from AI chat), force iframe to re-render
-    setIframeKey(prevKey => prevKey + 1);
-  }, [ideCode]);
+    // This effect handles the typing animation when ideCode from context changes AND it's an external update.
+    if (isExternalUpdate && ideCode !== animatedIdeCode) {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      setAnimatedIdeCode(''); 
+      
+      let index = 0;
+      const typeCharacter = () => {
+        if (index < ideCode.length) {
+          setAnimatedIdeCode(prev => prev + ideCode[index]);
+          index++;
+          typingTimeoutRef.current = setTimeout(typeCharacter, typingSpeed);
+        } else {
+          // Animation finished
+          if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+          }
+          // Ensure final animated code matches context exactly to prevent minor discrepancies
+           if (animatedIdeCodeRef.current !== ideCode) { // Use ref for freshest animated code check
+            setAnimatedIdeCode(ideCode);
+          }
+          setIsExternalUpdate(false); // Mark animation as done
+        }
+      };
+      typingTimeoutRef.current = setTimeout(typeCharacter, typingSpeed);
 
+    } else if (!isExternalUpdate && ideCode !== animatedIdeCode) {
+      // If not an external update (e.g. user typed, or tab switch caused sync),
+      // directly set animatedIdeCode to ideCode without animation.
+      if (typingTimeoutRef.current) {
+         clearTimeout(typingTimeoutRef.current); // Stop any residual animation
+      }
+      setAnimatedIdeCode(ideCode);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ideCode, isExternalUpdate]); // Key dependencies
+
+  // Ref to hold the latest animatedIdeCode for comparison in timeout
+  const animatedIdeCodeRef = useRef(animatedIdeCode);
+  useEffect(() => {
+    animatedIdeCodeRef.current = animatedIdeCode;
+  }, [animatedIdeCode]);
+
+  const [iframeKey, setIframeKey] = useState(0); 
+  useEffect(() => {
+    // Refresh iframe when animated code changes (especially after animation completes)
+    setIframeKey(prevKey => prevKey + 1);
+  }, [animatedIdeCode]);
 
   const handleFileSelect = (fileName: string, fileContent?: string) => {
     setSelectedFileName(fileName);
     if (fileContent) {
-      // For this demo, if it's a file from the tree with mock content,
-      // we set the IDE code to that. Otherwise, GFR code remains.
-      // A real IDE would load actual file content.
+      setIsExternalUpdate(true); 
       setIdeCode(fileContent);
       setActiveDevelopTab('editor');
-    } else if (fileName === 'GFR_Calculator.html') {
-      // If GFR_Calculator.html (not in tree but representing context) is "selected"
-      // ensure context's ideCode is shown (which it should be already)
-      // and switch to preview if AI set it.
     }
   };
   
   const handleEditorChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setIdeCode(event.target.value);
+    if (typingTimeoutRef.current) { 
+      clearTimeout(typingTimeoutRef.current);
+    }
+    setIsExternalUpdate(false); 
+    const newCode = event.target.value;
+    setAnimatedIdeCode(newCode); 
+    setIdeCode(newCode);         
   };
 
   return (
@@ -133,18 +185,16 @@ export function DevelopView() {
           )}
         </div>
 
-        {/* Main Content Area: Editor and Tabs (Preview/Terminal) */}
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Editor Controls */}
           <div className="p-2 bg-secondary/30 border-b border-border flex items-center space-x-2">
             <Button variant="ghost" size="icon" onClick={() => setIsExplorerOpen(!isExplorerOpen)} className="h-7 w-7">
               {isExplorerOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelRightClose className="h-4 w-4" />}
             </Button>
-            <span className="text-sm font-medium text-foreground truncate flex-1">{selectedFileName}</span>
-            {/* The "Play" button is removed as preview is now a tab */}
+            <span className="text-sm font-medium text-foreground truncate flex-1">
+              {selectedFileName || (activeDevelopTab === 'editor' ? "Editor" : activeDevelopTab === 'preview' ? "Preview" : "Terminal" )}
+            </span>
           </div>
           
-          {/* Editor Area */}
           <div className="flex-1 flex flex-col min-h-0">
             <Tabs value={activeDevelopTab} onValueChange={(value) => setActiveDevelopTab(value as 'editor'|'preview'|'terminal')} className="flex-1 flex flex-col min-h-0">
               <TabsList className="mx-2 mt-2 self-start">
@@ -161,17 +211,17 @@ export function DevelopView() {
 
               <TabsContent value="editor" className="flex-1 flex flex-col min-h-0 p-0.5 mt-0">
                 <Textarea
-                  value={ideCode}
+                  value={animatedIdeCode} 
                   onChange={handleEditorChange}
                   className="flex-1 w-full h-full text-sm font-mono bg-muted/20 border-0 focus:ring-0 resize-none p-3 rounded-md"
-                  placeholder="Write your code here..."
+                  placeholder="Code will appear here..."
                 />
               </TabsContent>
 
               <TabsContent value="preview" className="flex-1 p-0.5 mt-0">
                 <iframe
-                  key={iframeKey} // Force re-render on code change
-                  srcDoc={ideCode}
+                  key={iframeKey} 
+                  srcDoc={animatedIdeCode} 
                   title="Preview"
                   className="w-full h-full border-0 rounded-md bg-white"
                   sandbox="allow-scripts allow-same-origin"

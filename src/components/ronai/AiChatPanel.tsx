@@ -637,7 +637,7 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
   const [deepResearchEnabled, setDeepResearchEnabled] = useState(false);
   const [gfrDemoStage, setGfrDemoStage] = useState<GfrDemoStage>('none');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const { setIdeCode, setActiveDevelopTab } = useIdeContext();
+  const { setIdeCode, setActiveDevelopTab, setIsExternalUpdate } = useIdeContext();
 
 
   useEffect(() => {
@@ -678,22 +678,22 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
 
     // GFR Demo Flow
     if (currentInput.toLowerCase().includes('gfr calculator') && gfrDemoStage === 'none') {
+      setIsExternalUpdate(true); // Signal to IDE that this is an AI update for animation
       setIdeCode(GFR_CALCULATOR_HTML);
-      setActiveDevelopTab('preview'); // Switch DevelopView to preview tab
+      setActiveDevelopTab('preview'); 
       aiResponse = {
         id: aiMessageId,
         text: "Okay, I can help you with that! I've generated the HTML, CSS, and JavaScript for a GFR calculator and loaded it into your Develop panel. It's designed with a theme toggle. By default, it's in light mode. Check out the Develop panel to see it live!",
         sender: 'ai',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        codeCompletion: GFR_CALCULATOR_HTML, // Still show in chat for reference
+        codeCompletion: GFR_CALCULATOR_HTML, 
         toolSuggestion: "GFR Calculator (Live in Develop Panel)",
         reasoning: "Provides a complete, interactive GFR calculator. View and edit it in the Develop panel."
       };
       setGfrDemoStage('light_mode_shown');
     } else if (currentInput.toLowerCase().includes('add dark mode to this') && gfrDemoStage === 'light_mode_shown') {
-      // The HTML already has dark mode, so we just change the AI's text
-      // and ensure the Develop panel is still showing the preview.
-      setIdeCode(GFR_CALCULATOR_HTML); // Ensure code is still there
+      setIsExternalUpdate(true); // Signal for animation even though code is same
+      setIdeCode(GFR_CALCULATOR_HTML); 
       setActiveDevelopTab('preview');
       aiResponse = {
         id: aiMessageId,
@@ -712,9 +712,9 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
         sender: 'ai',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
-      setGfrDemoStage('none'); // Reset demo
+      setGfrDemoStage('none'); 
     } else {
-      // Reset GFR demo if user says something unrelated
+      
       if (gfrDemoStage !== 'none') setGfrDemoStage('none');
       
       try {
@@ -725,8 +725,9 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
             cursorPosition: 0, 
           };
           const result = await aiCodeCompletion(completionInput);
-          setIdeCode(result.completedCode); // Also put this generated code in the IDE
-          setActiveDevelopTab('editor'); // Switch to editor for this general code
+          setIsExternalUpdate(true); // Signal for animation
+          setIdeCode(result.completedCode); 
+          setActiveDevelopTab('editor'); 
           aiResponse = {
             id: aiMessageId,
             text: `Here's some code based on your request. I've also placed it in the Develop panel's editor:`,
