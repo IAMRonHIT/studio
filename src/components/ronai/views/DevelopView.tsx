@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Folder, File, ChevronRight, PanelLeftClose, PanelRightClose, Eye, TerminalIcon, Code2Icon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIdeContext } from '@/contexts/IdeContext';
+import { PreviewPanel } from './PreviewPanel'; // Import the new component
 
 const mockFileStructure = [
   { name: 'src', type: 'folder', children: [
@@ -150,9 +151,7 @@ export function DevelopView() {
   };
 
   return (
-    // Root div of DevelopView: flex-1 to take space from parent in RonAILayout, flex-col to manage children
-    <div className="flex-1 flex flex-col bg-background text-foreground min-h-0"> {/* Added min-h-0 */}
-      {/* File Explorer and Main Content Area: flex-1 to take space from DevelopView root, min-h-0 for internal scroll */}
+    <div className="flex-1 flex flex-col bg-background text-foreground min-h-0">
       <div className="flex-1 flex min-h-0">
         <div
           className={cn(
@@ -174,9 +173,7 @@ export function DevelopView() {
           )}
         </div>
 
-        {/* Editor/Tabs area container: flex-1 to take remaining horizontal space, flex-col for vertical layout */}
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Header for selected file name: fixed height */}
           <div className="p-2 bg-secondary/30 border-b border-border flex items-center space-x-2">
             <Button variant="ghost" size="icon" onClick={() => setIsExplorerOpen(!isExplorerOpen)} className="h-7 w-7">
               {isExplorerOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelRightClose className="h-4 w-4" />}
@@ -185,11 +182,10 @@ export function DevelopView() {
               {selectedFileName || (activeDevelopTab === 'editor' ? "Editor" : activeDevelopTab === 'preview' ? "Preview" : "Terminal" )}
             </span>
           </div>
-
-          {/* Explicit flex container for Tabs component: flex-1 to take remaining vertical space, flex-col */}
+          
           <div className="flex-1 flex flex-col min-h-0">
             <Tabs value={activeDevelopTab} onValueChange={(value) => setActiveDevelopTab(value as 'editor'|'preview'|'terminal')} className="flex-1 flex flex-col min-h-0">
-              <TabsList className="mx-2 mt-2 self-start"> {/* Fixed height */}
+              <TabsList className="mx-2 mt-2 self-start">
                 <TabsTrigger value="editor" className="text-xs px-3 py-1 h-auto">
                   <Code2Icon className="h-3.5 w-3.5 mr-1.5" />Editor
                 </TabsTrigger>
@@ -201,7 +197,6 @@ export function DevelopView() {
                 </TabsTrigger>
               </TabsList>
 
-              {/* TabsContent for Editor: flex-1 to take space from Tabs, flex-col, no top margin */}
               <TabsContent value="editor" className="flex-1 flex flex-col min-h-0 mt-0">
                 <Textarea
                   value={animatedIdeCode}
@@ -211,19 +206,12 @@ export function DevelopView() {
                 />
               </TabsContent>
 
-              {/* TabsContent for Preview: flex-1 to take space from Tabs, flex-col, no top margin */}
               <TabsContent value="preview" className="flex-1 flex flex-col min-h-0 mt-0">
-                <iframe
-                  srcDoc={animatedIdeCode}
-                  title="Preview"
-                  className="flex-1 w-full border-0 rounded-md bg-white" // iframe is flex-1 to fill its parent
-                  sandbox="allow-scripts allow-same-origin"
-                />
+                <PreviewPanel code={animatedIdeCode} />
               </TabsContent>
 
-              {/* TabsContent for Terminal: flex-1 to take space from Tabs, flex-col, no top margin */}
               <TabsContent value="terminal" className="flex-1 flex flex-col min-h-0 mt-0">
-                <ScrollArea className="flex-1 bg-secondary/50 rounded-md"> {/* ScrollArea is flex-1 */}
+                <ScrollArea className="flex-1 bg-secondary/50 rounded-md">
                   <div className="text-xs font-mono text-muted-foreground p-2">
                     <p>$ npm install</p>
                     <p>...</p>
