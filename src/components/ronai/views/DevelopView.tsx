@@ -150,7 +150,8 @@ export function DevelopView() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-background text-foreground">
+    <div className="flex-1 flex flex-col bg-background text-foreground"> {/* MODIFIED: h-full to flex-1 */}
+      {/* File Explorer and Main Content Area */}
       <div className="flex-1 flex min-h-0">
         <div
           className={cn(
@@ -172,8 +173,10 @@ export function DevelopView() {
           )}
         </div>
 
-        <div className="flex-1 flex flex-col min-w-0"> {/* Editor/Tabs area container */}
-          <div className="p-2 bg-secondary/30 border-b border-border flex items-center space-x-2"> {/* Header */}
+        {/* Editor/Tabs area container */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Header for selected file name */}
+          <div className="p-2 bg-secondary/30 border-b border-border flex items-center space-x-2">
             <Button variant="ghost" size="icon" onClick={() => setIsExplorerOpen(!isExplorerOpen)} className="h-7 w-7">
               {isExplorerOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelRightClose className="h-4 w-4" />}
             </Button>
@@ -236,4 +239,6 @@ export function DevelopView() {
     </div>
   );
 }
+    
+
     

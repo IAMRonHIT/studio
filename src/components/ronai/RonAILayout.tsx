@@ -26,14 +26,13 @@ export function RonAILayout() {
   const [initialMouseX, setInitialMouseX] = useState(0);
   const [initialPanelWidthPx, setInitialPanelWidthPx] = useState(0);
 
-  const panelContainerRef = useRef<HTMLDivElement>(null); // Ref for the slidable panel's direct parent
-  const slidablePanelRef = useRef<HTMLDivElement>(null); // Ref for the slidable panel itself
+  const panelContainerRef = useRef<HTMLDivElement>(null); 
+  const slidablePanelRef = useRef<HTMLDivElement>(null); 
 
 
   useEffect(() => {
     setIsPanelVisible(activePanel !== null);
     if (activePanel === null) {
-      // Optionally reset panel width when closed, or remember last width
       // setPanelWidth(DEFAULT_PANEL_WIDTH_PERCENT); 
     }
   }, [activePanel]);
@@ -43,7 +42,6 @@ export function RonAILayout() {
       setActivePanel(null);
     } else {
       setActivePanel(panel);
-       // If panel was closed, and we are opening a new one, ensure it's at least default width
       if (!isPanelVisible) {
         setPanelWidth(prev => Math.max(prev, DEFAULT_PANEL_WIDTH_PERCENT));
       }
@@ -106,13 +104,13 @@ export function RonAILayout() {
         <ThinSidebar activePanel={activePanel} onSelectPanel={togglePanel} />
 
         <div id="panel-chat-container" ref={panelContainerRef} className="flex flex-1 h-full overflow-hidden">
-          {/* Sliding Panel Area */}
+          {/* Sliding Panel Area (where DevelopView, BrowserView, etc. are rendered) */}
           <div
             ref={slidablePanelRef}
             className={cn(
               "h-full bg-background flex flex-col relative border-r border-border",
-              !isResizing && "transition-width duration-200 ease-in-out", // Only transition when not resizing
-              isPanelVisible ? "p-0" : "p-0 overflow-hidden" // Keep padding 0 to avoid jumps
+              !isResizing && "transition-width duration-200 ease-in-out", 
+              isPanelVisible ? "p-0" : "p-0 overflow-hidden" 
             )}
             style={{ width: isPanelVisible ? `${panelWidth}%` : '0px' }}
           >
@@ -124,7 +122,10 @@ export function RonAILayout() {
                     <PanelLeftClose className="h-4 w-4" />
                   </Button>
                 </div>
-                <div className="flex-1 overflow-auto">
+                {/* This div is the direct parent for BrowserView, DevelopView, ToolsView */}
+                {/* It uses flex-1 to take remaining height and overflow-auto for scrolling if content exceeds */}
+                {/* The child views (DevelopView etc) should be designed to fill this space (e.g. using flex-1 or h-full)*/}
+                <div className="flex-1 flex flex-col min-h-0 overflow-auto"> {/* Added flex flex-col min-h-0 for robust child height */}
                   {activePanel === 'browser' && <BrowserView />}
                   {activePanel === 'develop' && <DevelopView />}
                   {activePanel === 'tools' && <ToolsView />}
@@ -154,3 +155,5 @@ export function RonAILayout() {
     </div>
   );
 }
+
+    
