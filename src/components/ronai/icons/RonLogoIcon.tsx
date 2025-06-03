@@ -13,7 +13,7 @@ export function RonLogoIcon(props: SVGProps<SVGSVGElement>) {
       strokeLinejoin="round"
       {...props}
     >
-      <circle cx="12" cy="12" r="10" fill="#FF0000" stroke="none" />
+      <circle cx="12" cy="12" r="10" fill="#8B5CF6" stroke="none" /> {/* Changed fill to primary purple */}
       <text
         x="50%"
         y="50%"
