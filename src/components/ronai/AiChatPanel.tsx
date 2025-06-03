@@ -742,16 +742,17 @@ export function AiChatPanel({ activeView, onToolPreviewRequest }: AiChatPanelPro
           
           setIsExternalUpdate(true); 
           setIdeCode(codeCompletionResult.completedCode); 
-          setActiveDevelopTab('editor'); 
+          setActiveDevelopTab('preview'); // Switch to PREVIEW for non-technical users
 
           aiResponse = {
             id: aiMessageId,
-            text: `I've drafted some code for you based on your request for the "${toolResult.toolSuggestion}". You can find it in the Develop panel's editor.`,
+            text: `Okay, I've put together some code to help with your request. You can see what it does in the 'Preview' tab in the 'Develop' panel. If you want to change anything, just let me know!`,
             sender: 'ai',
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             toolSuggestion: toolResult.toolSuggestion,
             reasoning: toolResult.reasoning,
-            // No direct previewAction for "Code Editor Helper", as code goes to editor.
+            // This specific "Code Editor Helper" path now sends code to editor and asks user to check preview.
+            // It doesn't use the `previewAction` card button for *this* flow, as the action is immediate.
           };
         } else if (toolResult.toolSuggestion) { // Another tool was suggested (e.g., Image Generator)
            aiResponse = {
