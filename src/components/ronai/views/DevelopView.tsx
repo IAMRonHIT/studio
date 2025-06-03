@@ -128,7 +128,7 @@ export function DevelopView() {
       setAnimatedIdeCode(ideCode);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ideCode, isExternalUpdate, setIsExternalUpdate]); // Added setIsExternalUpdate to deps
+  }, [ideCode, isExternalUpdate]); 
 
   const handleFileSelect = (fileName: string, fileContent?: string) => {
     setSelectedFileName(fileName);
@@ -197,16 +197,16 @@ export function DevelopView() {
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="editor" className="flex-1 flex flex-col min-h-0 p-0.5 mt-0">
+              <TabsContent value="editor" className="flex-1 flex flex-col min-h-0 mt-0">
                 <Textarea
                   value={animatedIdeCode} 
                   onChange={handleEditorChange}
-                  className="flex-1 w-full h-full text-sm font-mono bg-muted/20 border-0 focus:ring-0 resize-none p-3 rounded-md"
+                  className="flex-1 w-full text-sm font-mono bg-muted/20 border-0 focus:ring-0 resize-none p-3 rounded-md"
                   placeholder="Code will appear here..."
                 />
               </TabsContent>
 
-              <TabsContent value="preview" className="flex-1 flex flex-col min-h-0 p-0.5 mt-0">
+              <TabsContent value="preview" className="flex-1 flex flex-col min-h-0 mt-0">
                 <iframe
                   srcDoc={animatedIdeCode} 
                   title="Preview"
@@ -215,8 +215,8 @@ export function DevelopView() {
                 />
               </TabsContent>
               
-              <TabsContent value="terminal" className="flex-1 flex flex-col min-h-0 mt-0 p-0.5">
-                <ScrollArea className="flex-1 h-full bg-secondary/50 rounded-md">
+              <TabsContent value="terminal" className="flex-1 flex flex-col min-h-0 mt-0">
+                <ScrollArea className="flex-1 bg-secondary/50 rounded-md">
                   <div className="text-xs font-mono text-muted-foreground p-2">
                     <p>$ npm install</p>
                     <p>...</p>
