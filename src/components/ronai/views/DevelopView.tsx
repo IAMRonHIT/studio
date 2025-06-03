@@ -89,7 +89,7 @@ export function DevelopView() {
 
   const [animatedIdeCode, setAnimatedIdeCode] = useState('');
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const typingSpeed = 15; 
+  const typingSpeed = 15;
   const animatedIdeCodeRef = useRef(animatedIdeCode);
 
   useEffect(() => {
@@ -116,7 +116,7 @@ export function DevelopView() {
            if (animatedIdeCodeRef.current !== ideCode) {
             setAnimatedIdeCode(ideCode);
           }
-          setIsExternalUpdate(false); 
+          setIsExternalUpdate(false);
         }
       };
       typingTimeoutRef.current = setTimeout(typeCharacter, typingSpeed);
@@ -143,10 +143,10 @@ export function DevelopView() {
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
-    setIsExternalUpdate(false); 
+    setIsExternalUpdate(false);
     const newCode = event.target.value;
-    setAnimatedIdeCode(newCode); 
-    setIdeCode(newCode); 
+    setAnimatedIdeCode(newCode);
+    setIdeCode(newCode);
   };
 
   return (
@@ -172,8 +172,8 @@ export function DevelopView() {
           )}
         </div>
 
-        <div className="flex-1 flex flex-col min-w-0">
-          <div className="p-2 bg-secondary/30 border-b border-border flex items-center space-x-2">
+        <div className="flex-1 flex flex-col min-w-0"> {/* Editor/Tabs area container */}
+          <div className="p-2 bg-secondary/30 border-b border-border flex items-center space-x-2"> {/* Header */}
             <Button variant="ghost" size="icon" onClick={() => setIsExplorerOpen(!isExplorerOpen)} className="h-7 w-7">
               {isExplorerOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelRightClose className="h-4 w-4" />}
             </Button>
@@ -182,7 +182,8 @@ export function DevelopView() {
             </span>
           </div>
 
-          <div className="flex-1 flex flex-col min-h-0"> 
+          {/* Explicit flex container for Tabs component to ensure it fills remaining vertical space */}
+          <div className="flex-1 flex flex-col min-h-0">
             <Tabs value={activeDevelopTab} onValueChange={(value) => setActiveDevelopTab(value as 'editor'|'preview'|'terminal')} className="flex-1 flex flex-col min-h-0">
               <TabsList className="mx-2 mt-2 self-start">
                 <TabsTrigger value="editor" className="text-xs px-3 py-1 h-auto">
@@ -205,7 +206,7 @@ export function DevelopView() {
                 />
               </TabsContent>
 
-              <TabsContent value="preview" className="flex-1 mt-0 relative"> 
+              <TabsContent value="preview" className="flex-1 min-h-0 mt-0 relative">
                 <iframe
                   srcDoc={animatedIdeCode}
                   title="Preview"
@@ -215,7 +216,7 @@ export function DevelopView() {
               </TabsContent>
 
               <TabsContent value="terminal" className="flex-1 flex flex-col min-h-0 mt-0">
-                <ScrollArea className="flex-1 bg-secondary/50 rounded-md"> 
+                <ScrollArea className="flex-1 bg-secondary/50 rounded-md">
                   <div className="text-xs font-mono text-muted-foreground p-2">
                     <p>$ npm install</p>
                     <p>...</p>
@@ -235,5 +236,4 @@ export function DevelopView() {
     </div>
   );
 }
-
     
