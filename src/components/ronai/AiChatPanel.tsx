@@ -14,13 +14,13 @@ import { suggestTool, type SuggestToolInput } from '@/ai/flows/ai-tool-selector'
 import { aiCodeCompletion, type AiCodeCompletionInput } from '@/ai/flows/ai-code-completion';
 
 const initialMessageBase: Omit<ChatMessage, 'timestamp'> & { timestamp: string | null } = {
-  id: String(Date.now()) + '-initial', // Ensure unique ID for initial message
+  id: String(Date.now()) + '-initial',
   text: 'Hello! How can I help you with Ron AI tools today?',
   sender: 'ai',
-  timestamp: null, 
+  timestamp: null,
 };
 
-export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) { // Allow activeView to be null
+export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
   const [messages, setMessages] = useState<ChatMessage[]>([initialMessageBase]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -35,7 +35,7 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
           : msg
       )
     );
-  }, []); 
+  }, []);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -50,7 +50,7 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
     if (input.trim() === '') return;
 
     const newUserMessage: ChatMessage = {
-      id: String(Date.now()) + '-user', 
+      id: String(Date.now()) + '-user',
       text: input,
       sender: 'user',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -60,18 +60,16 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
     setIsLoading(true);
 
     let aiResponse: ChatMessage | null = null;
-    const aiMessageId = String(Date.now() + 1) + '-ai'; 
+    const aiMessageId = String(Date.now() + 1) + '-ai';
 
     try {
-      // Placeholder: Add logic for deepResearchEnabled if it modifies the AI call
       console.log("Deep Research Enabled:", deepResearchEnabled);
 
-      // Prioritize code completion if the 'develop' panel is active and query suggests coding
       if (activeView === 'develop' && (input.toLowerCase().includes('code') || input.toLowerCase().includes('write') || input.toLowerCase().includes('function') || input.toLowerCase().includes('implement'))) {
         const completionInput: AiCodeCompletionInput = {
-          codeSnippet: "/* Current editor content could be passed here if integrated */\nconsole.log('Hello');", // Placeholder
-          programmingLanguage: "javascript", // Placeholder
-          cursorPosition: 0, // Placeholder
+          codeSnippet: "/* Current editor content could be passed here if integrated */\nconsole.log('Hello');",
+          programmingLanguage: "javascript",
+          cursorPosition: 0,
         };
         const result = await aiCodeCompletion({ ...completionInput, codeSnippet: `// User wants: ${input}\n`});
         aiResponse = {
@@ -81,7 +79,7 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           codeCompletion: result.completedCode,
         };
-      } else { // Otherwise, default to tool suggestion
+      } else {
         const toolInput: SuggestToolInput = { prompt: input };
         const result = await suggestTool(toolInput);
         aiResponse = {
@@ -102,7 +100,7 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
     }
-    
+
     if (aiResponse) {
        setMessages((prev) => [...prev, aiResponse!]);
     }
@@ -125,15 +123,42 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
       </ScrollArea>
 
       <div className="p-4 border-t border-border space-y-3">
+        <div className="flex items-center justify-start space-x-2 mb-3">
+          <Switch
+            id="deep-research"
+            checked={deepResearchEnabled}
+            onCheckedChange={setDeepResearchEnabled}
+            disabled={isLoading}
+            className="
+              data-[state=checked]:bg-primary
+              data-[state=unchecked]:bg-input
+              data-[state=unchecked]:[&>span]:bg-primary
+              data-[state=checked]:[&>span]:bg-black
+            "
+          />
+          <Label htmlFor="deep-research" className="text-sm text-muted-foreground select-none">
+            Deep Research
+          </Label>
+        </div>
+
         <div className="flex items-center space-x-2">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            title="Attach file" 
-            className="text-muted-foreground hover:text-primary"
+          <Button
+            variant="outline"
+            size="icon"
+            title="Attach file"
+            className="bg-card text-[hsl(250_70%_25%)] border-[hsl(250_70%_25%)] hover:bg-[hsl(250_70%_25%)]/10 hover:text-[hsl(250_70%_25%)]"
             disabled={isLoading}
           >
             <Paperclip className="h-5 w-5" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            title="Text-to-Speech"
+            className="bg-card text-[hsl(250_70%_25%)] border-[hsl(250_70%_25%)] hover:bg-[hsl(250_70%_25%)]/10 hover:text-[hsl(250_70%_25%)]"
+            disabled={isLoading}
+          >
+            <Volume2 className="h-5 w-5" />
           </Button>
           <Input
             type="text"
@@ -144,35 +169,16 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
             className="flex-1 bg-input focus:ring-primary"
             disabled={isLoading}
           />
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            title="Text-to-Speech"
-            className="text-muted-foreground hover:text-primary"
+          <Button
+            onClick={handleSendMessage}
             disabled={isLoading}
-          >
-            <Volume2 className="h-5 w-5" />
-          </Button>
-          <Button 
-            onClick={handleSendMessage} 
-            disabled={isLoading} 
             className="bg-gradient-to-b from-[hsl(250_70%_25%)] to-[hsl(var(--primary))] hover:from-[hsl(250_70%_25%)] hover:to-[hsl(var(--primary)/0.9)] text-primary-foreground"
             title="Send message"
           >
             <Send className="h-4 w-4" />
           </Button>
         </div>
-        <div className="flex items-center justify-start space-x-2 pt-1">
-          <Switch
-            id="deep-research"
-            checked={deepResearchEnabled}
-            onCheckedChange={setDeepResearchEnabled}
-            disabled={isLoading}
-          />
-          <Label htmlFor="deep-research" className="text-sm text-muted-foreground select-none">
-            Deep Research
-          </Label>
-        </div>
+
         <p className="text-xs text-muted-foreground text-center px-2 pt-1">
           AI responses are generated by Project Mariner and may sometimes be inaccurate or incomplete. Please verify important information.
         </p>
