@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { ChatMessageItem } from './ChatMessageItem';
 import { suggestTool, type SuggestToolInput, type SuggestToolOutput } from '@/ai/flows/ai-tool-selector';
 import { aiCodeCompletion, type AiCodeCompletionInput } from '@/ai/flows/ai-code-completion';
+import { performDeepResearch, type DeepResearchInput, type DeepResearchOutput } from '@/ai/flows/deep-research-flow';
 import { useIdeContext } from '@/contexts/IdeContext';
 
 const initialMessageBase: Omit<ChatMessage, 'timestamp'> & { timestamp: string | null } = {
@@ -681,8 +682,37 @@ export function AiChatPanel({ activeView, onToolPreviewRequest }: AiChatPanelPro
     let aiResponse: ChatMessage | null = null;
     const aiMessageId = String(Date.now() + 1) + '-ai';
 
-    // GFR Demo Flow
-    if (currentInput.toLowerCase().includes('gfr calculator') && gfrDemoStage === 'none') {
+    if (deepResearchEnabled) {
+      try {
+        const researchInput: DeepResearchInput = { query: currentInput };
+        const researchResult = await performDeepResearch(researchInput);
+        
+        let formattedResearchText = `**Research Summary for "${currentInput}"**\n\n**Summary:**\n${researchResult.summary}\n\n`;
+        if (researchResult.keyPoints && researchResult.keyPoints.length > 0) {
+          formattedResearchText += `**Key Points:**\n${researchResult.keyPoints.map(p => `- ${p}`).join('\n')}\n\n`;
+        }
+        if (researchResult.sources && researchResult.sources.length > 0) {
+          formattedResearchText += `**Potential Sources (AI Generated - Verify Accuracy):**\n${researchResult.sources.map(s => `- ${s.title}${s.url ? ` (${s.url})` : ''}`).join('\n')}`;
+        } else {
+          formattedResearchText += "**Sources:**\nNo specific sources were cited by the AI for this research.";
+        }
+
+        aiResponse = {
+          id: aiMessageId,
+          text: formattedResearchText,
+          sender: 'ai',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+      } catch (error) {
+        console.error("Deep research flow error:", error);
+        aiResponse = {
+          id: aiMessageId,
+          text: "Sorry, I encountered an error while performing deep research.",
+          sender: 'ai',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+      }
+    } else if (currentInput.toLowerCase().includes('gfr calculator') && gfrDemoStage === 'none') {
       aiResponse = {
         id: aiMessageId,
         text: "Okay, I can help you with that! I've prepared a GFR calculator.\n\nI'll load it into your Develop panel when you're ready to preview. Here's a summary of what it expects and what it provides:",
@@ -718,7 +748,6 @@ export function AiChatPanel({ activeView, onToolPreviewRequest }: AiChatPanelPro
       };
       setGfrDemoStage('none'); 
     } else {
-      // Reset GFR demo stage if conversation deviates
       if (gfrDemoStage !== 'none') setGfrDemoStage('none');
       
       try {
@@ -728,7 +757,7 @@ export function AiChatPanel({ activeView, onToolPreviewRequest }: AiChatPanelPro
         if (toolResult.toolSuggestion === "CONVERSATIONAL_RESPONSE") {
           aiResponse = {
             id: aiMessageId,
-            text: toolResult.reasoning, // This is the AI's direct conversational reply
+            text: toolResult.reasoning, 
             sender: 'ai',
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           };
@@ -742,7 +771,7 @@ export function AiChatPanel({ activeView, onToolPreviewRequest }: AiChatPanelPro
           
           setIsExternalUpdate(true); 
           setIdeCode(codeCompletionResult.completedCode); 
-          setActiveDevelopTab('preview'); // Switch to PREVIEW for non-technical users
+          setActiveDevelopTab('preview'); 
 
           aiResponse = {
             id: aiMessageId,
@@ -751,10 +780,8 @@ export function AiChatPanel({ activeView, onToolPreviewRequest }: AiChatPanelPro
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             toolSuggestion: toolResult.toolSuggestion,
             reasoning: toolResult.reasoning,
-            // This specific "Code Editor Helper" path now sends code to editor and asks user to check preview.
-            // It doesn't use the `previewAction` card button for *this* flow, as the action is immediate.
           };
-        } else if (toolResult.toolSuggestion) { // Another tool was suggested (e.g., Image Generator)
+        } else if (toolResult.toolSuggestion) { 
            aiResponse = {
             id: aiMessageId,
             text: `Based on your request, I suggest the '${toolResult.toolSuggestion}' tool. ${toolResult.reasoning}`,
@@ -762,11 +789,8 @@ export function AiChatPanel({ activeView, onToolPreviewRequest }: AiChatPanelPro
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             toolSuggestion: toolResult.toolSuggestion,
             reasoning: toolResult.reasoning,
-            // For now, other dynamically suggested tools won't have an automatic previewAction
-            // This could be extended in the future.
           };
         } else {
-          // Fallback or if suggestTool returns an empty suggestion but not "CONVERSATIONAL_RESPONSE"
           aiResponse = {
             id: aiMessageId,
             text: "I'm not sure how to help with that specific request. Can you try rephrasing?",
@@ -870,5 +894,3 @@ export function AiChatPanel({ activeView, onToolPreviewRequest }: AiChatPanelPro
     </div>
   );
 }
-
-    
