@@ -2,7 +2,7 @@
 'use server';
 /**
  * @fileOverview A Genkit flow for performing deep research on a given query,
- * leveraging the LLM's native web search capabilities.
+ * leveraging a web search tool for current information.
  *
  * - performDeepResearch - A function that takes a query and returns a research summary, key points, and sources.
  * - DeepResearchInput - The input type for the performDeepResearch function.
@@ -11,6 +11,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { performWebSearchTool } from '../tools/web-search-tool';
 
 const DeepResearchInputSchema = z.object({
   query: z.string().describe('The research topic or question.'),
@@ -23,9 +24,9 @@ const DeepResearchOutputSchema = z.object({
   sources: z.array(
     z.object({
       title: z.string().describe('The title of the source material.'),
-      url: z.string().optional().describe('The URL of the source, if available. Prioritize sources found via web search.')
+      url: z.string().optional().describe('The URL of the source, if available. Prioritize sources found via the performWebSearch tool.')
     })
-  ).optional().describe('A list of sources used for the research, including those identified by the AI or found through web searches.')
+  ).optional().describe('A list of sources used for the research, including those identified by the AI or found through web searches via the performWebSearch tool.')
 });
 export type DeepResearchOutput = z.infer<typeof DeepResearchOutputSchema>;
 
@@ -37,14 +38,15 @@ const prompt = ai.definePrompt({
   name: 'deepResearchPrompt',
   input: {schema: DeepResearchInputSchema},
   output: {schema: DeepResearchOutputSchema},
-  // No custom 'tools' array here; relying on model's native capabilities
+  tools: [performWebSearchTool], // Use the specific web search tool
   prompt: `You are a highly sophisticated AI research assistant specializing in healthcare topics.
 Your goal is to conduct in-depth research on the following query.
 
-**To ensure your information is current and comprehensive, you MUST use your built-in Google Search capabilities to find relevant articles, studies, and guidelines from the internet.**
-Synthesize the information from your internal knowledge AND the results from your web searches using Google Search.
+**To ensure your information is current and comprehensive, you MUST use the "performWebSearch" tool to find relevant articles, studies, and guidelines from the internet.**
+Synthesize the information from your internal knowledge AND the results from the "performWebSearch" tool.
 
-Provide a comprehensive summary, detail the key findings, and list credible sources with their URLs as found through your searches.
+Provide a comprehensive summary, detail the key findings, and list credible sources with their URLs as found through your searches using the "performWebSearch" tool.
+Prioritize citing sources and URLs obtained from the "performWebSearch" tool.
 Focus on accuracy, depth, and clarity. Ensure your output strictly adheres to the defined schema.
 
 Query: {{{query}}}
@@ -58,7 +60,7 @@ const deepResearchFlow = ai.defineFlow(
     outputSchema: DeepResearchOutputSchema,
   },
   async (input: DeepResearchInput) => {
-    const {output} = await prompt(input); // The LLM will decide if/when to use its native search.
+    const {output} = await prompt(input);
     if (!output) {
       throw new Error("The AI failed to provide research output.");
     }
