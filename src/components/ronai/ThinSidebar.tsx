@@ -4,7 +4,7 @@
 import type { ActiveView } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { LayoutGrid, Code2, Wrench, MessageSquare } from 'lucide-react';
+import { LayoutGrid, Code2, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ThinSidebarProps {
@@ -21,11 +21,10 @@ const sidebarItems: { name: ActiveView; label: string; icon: React.ElementType }
 export function ThinSidebar({ activePanel, onSelectPanel }: ThinSidebarProps) {
   return (
     <TooltipProvider delayDuration={0}>
-      <div className="w-16 bg-primary-foreground dark:bg-stone-900 flex flex-col items-center py-4 space-y-3 border-r border-border shadow-md">
-        {/* Placeholder for a logo or main app icon if needed */}
-        {/* <div className="p-2 mb-4">
-          <MessageSquare className="h-7 w-7 text-primary" />
-        </div> */}
+      <div className={cn(
+        "w-16 flex flex-col items-center py-4 space-y-3 border-r border-border shadow-md",
+        "bg-gradient-to-b from-[hsl(250_70%_25%)] to-[hsl(var(--primary))]" // Dark rich indigo to primary gradient
+      )}>
         {sidebarItems.map((item) => (
           <Tooltip key={item.name}>
             <TooltipTrigger asChild>
@@ -34,16 +33,16 @@ export function ThinSidebar({ activePanel, onSelectPanel }: ThinSidebarProps) {
                 size="icon"
                 onClick={() => onSelectPanel(item.name)}
                 className={cn(
-                  "h-10 w-10 rounded-lg",
+                  "h-10 w-10 rounded-lg transition-colors duration-150",
                   activePanel === item.name
-                    ? "bg-primary/20 text-primary dark:bg-primary dark:text-primary-foreground"
-                    : "text-muted-foreground hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/80 dark:hover:text-primary-foreground"
+                    ? "bg-primary/40 text-white dark:bg-primary dark:text-primary-foreground"
+                    : "text-purple-200 hover:bg-primary/30 hover:text-white dark:text-purple-300 dark:hover:bg-primary/50 dark:hover:text-primary-foreground"
                 )}
               >
                 <item.icon className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right" className="ml-2">
+            <TooltipContent side="right" className="ml-2 bg-background text-foreground border-border shadow-lg">
               <p>{item.label}</p>
             </TooltipContent>
           </Tooltip>
