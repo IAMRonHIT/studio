@@ -92,7 +92,6 @@ export function DevelopView() {
   const typingSpeed = 15; 
 
   useEffect(() => {
-    // This effect handles the typing animation when ideCode from context changes AND it's an external update.
     if (isExternalUpdate && ideCode !== animatedIdeCode) {
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
@@ -106,31 +105,26 @@ export function DevelopView() {
           index++;
           typingTimeoutRef.current = setTimeout(typeCharacter, typingSpeed);
         } else {
-          // Animation finished
           if (typingTimeoutRef.current) {
             clearTimeout(typingTimeoutRef.current);
           }
-          // Ensure final animated code matches context exactly to prevent minor discrepancies
-           if (animatedIdeCodeRef.current !== ideCode) { // Use ref for freshest animated code check
+           if (animatedIdeCodeRef.current !== ideCode) { 
             setAnimatedIdeCode(ideCode);
           }
-          setIsExternalUpdate(false); // Mark animation as done
+          setIsExternalUpdate(false); 
         }
       };
       typingTimeoutRef.current = setTimeout(typeCharacter, typingSpeed);
 
     } else if (!isExternalUpdate && ideCode !== animatedIdeCode) {
-      // If not an external update (e.g. user typed, or tab switch caused sync),
-      // directly set animatedIdeCode to ideCode without animation.
       if (typingTimeoutRef.current) {
-         clearTimeout(typingTimeoutRef.current); // Stop any residual animation
+         clearTimeout(typingTimeoutRef.current); 
       }
       setAnimatedIdeCode(ideCode);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ideCode, isExternalUpdate]); // Key dependencies
+  }, [ideCode, isExternalUpdate]); 
 
-  // Ref to hold the latest animatedIdeCode for comparison in timeout
   const animatedIdeCodeRef = useRef(animatedIdeCode);
   useEffect(() => {
     animatedIdeCodeRef.current = animatedIdeCode;
@@ -138,7 +132,6 @@ export function DevelopView() {
 
   const [iframeKey, setIframeKey] = useState(0); 
   useEffect(() => {
-    // Refresh iframe when animated code changes (especially after animation completes)
     setIframeKey(prevKey => prevKey + 1);
   }, [animatedIdeCode]);
 
@@ -218,18 +211,18 @@ export function DevelopView() {
                 />
               </TabsContent>
 
-              <TabsContent value="preview" className="flex-1 p-0.5 mt-0">
+              <TabsContent value="preview" className="flex-1 flex flex-col min-h-0 p-0.5 mt-0">
                 <iframe
                   key={iframeKey} 
                   srcDoc={animatedIdeCode} 
                   title="Preview"
-                  className="w-full h-full border-0 rounded-md bg-white"
+                  className="flex-1 w-full border-0 rounded-md bg-white"
                   sandbox="allow-scripts allow-same-origin"
                 />
               </TabsContent>
               
-              <TabsContent value="terminal" className="flex-1 mt-0 p-0.5">
-                <ScrollArea className="h-full bg-secondary/50 rounded-md">
+              <TabsContent value="terminal" className="flex-1 flex flex-col min-h-0 mt-0 p-0.5">
+                <ScrollArea className="flex-1 h-full bg-secondary/50 rounded-md">
                   <div className="text-xs font-mono text-muted-foreground p-2">
                     <p>$ npm install</p>
                     <p>...</p>
