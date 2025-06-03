@@ -2,7 +2,7 @@
 'use server';
 /**
  * @fileOverview A Genkit flow for performing deep research on a given query,
- * potentially using web search tools.
+ * leveraging the LLM's native web search capabilities.
  *
  * - performDeepResearch - A function that takes a query and returns a research summary, key points, and sources.
  * - DeepResearchInput - The input type for the performDeepResearch function.
@@ -11,7 +11,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { searchWebTool } from '@/ai/tools/web-search-tool'; // Import the new tool
 
 const DeepResearchInputSchema = z.object({
   query: z.string().describe('The research topic or question.'),
@@ -38,17 +37,14 @@ const prompt = ai.definePrompt({
   name: 'deepResearchPrompt',
   input: {schema: DeepResearchInputSchema},
   output: {schema: DeepResearchOutputSchema},
-  tools: [searchWebTool], // Make the tool available to the LLM
+  // No custom 'tools' array here; relying on model's native capabilities
   prompt: `You are a highly sophisticated AI research assistant specializing in healthcare topics.
 Your goal is to conduct in-depth research on the following query.
 
-**You MUST use the 'searchWebTool' to find current and relevant information from the internet to answer the query.**
-You may use the 'searchWebTool' multiple times if necessary to gather comprehensive information on different aspects of the query.
-Synthesize the information from your internal knowledge AND the results from your web searches using the 'searchWebTool'.
+**To ensure your information is current and comprehensive, you MUST use your built-in Google Search capabilities to find relevant articles, studies, and guidelines from the internet.**
+Synthesize the information from your internal knowledge AND the results from your web searches using Google Search.
 
-Provide a comprehensive summary, detail the key findings, and list credible sources.
-When listing sources, prioritize those identified through the 'searchWebTool' if they are relevant and provide URLs if the tool returns them.
-
+Provide a comprehensive summary, detail the key findings, and list credible sources with their URLs as found through your searches.
 Focus on accuracy, depth, and clarity. Ensure your output strictly adheres to the defined schema.
 
 Query: {{{query}}}
@@ -62,9 +58,9 @@ const deepResearchFlow = ai.defineFlow(
     outputSchema: DeepResearchOutputSchema,
   },
   async (input: DeepResearchInput) => {
-    const {output} = await prompt(input); // The LLM will decide if/when to call searchWebTool
+    const {output} = await prompt(input); // The LLM will decide if/when to use its native search.
     if (!output) {
-      throw new Error("The AI failed to provide research output after attempting to use tools.");
+      throw new Error("The AI failed to provide research output.");
     }
     return output;
   }
