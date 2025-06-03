@@ -123,9 +123,8 @@ export function RonAILayout() {
                   </Button>
                 </div>
                 {/* This div is the direct parent for BrowserView, DevelopView, ToolsView */}
-                {/* It uses flex-1 to take remaining height and overflow-auto for scrolling if content exceeds */}
-                {/* The child views (DevelopView etc) should be designed to fill this space (e.g. using flex-1 or h-full)*/}
-                <div className="flex-1 flex flex-col min-h-0 overflow-auto"> {/* Added flex flex-col min-h-0 for robust child height */}
+                {/* It uses flex-1 to take remaining height and overflow-hidden to ensure children manage their own scroll */}
+                <div className="flex-1 flex flex-col min-h-0 overflow-hidden"> {/* MODIFIED: overflow-auto to overflow-hidden, added flex flex-col min-h-0 */}
                   {activePanel === 'browser' && <BrowserView />}
                   {activePanel === 'develop' && <DevelopView />}
                   {activePanel === 'tools' && <ToolsView />}
@@ -155,5 +154,3 @@ export function RonAILayout() {
     </div>
   );
 }
-
-    
