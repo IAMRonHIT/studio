@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useContext } from 'react';
 import type { ChatMessage, ActiveView } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { ChatMessageItem } from './ChatMessageItem';
 import { suggestTool, type SuggestToolInput } from '@/ai/flows/ai-tool-selector';
 import { aiCodeCompletion, type AiCodeCompletionInput } from '@/ai/flows/ai-code-completion';
+import { useIdeContext } from '@/contexts/IdeContext';
 
 const initialMessageBase: Omit<ChatMessage, 'timestamp'> & { timestamp: string | null } = {
   id: String(Date.now()) + '-initial-ai',
@@ -636,6 +637,8 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
   const [deepResearchEnabled, setDeepResearchEnabled] = useState(false);
   const [gfrDemoStage, setGfrDemoStage] = useState<GfrDemoStage>('none');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const { setIdeCode, setActiveDevelopTab } = useIdeContext();
+
 
   useEffect(() => {
     setMessages((prevMessages) =>
@@ -675,54 +678,58 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
 
     // GFR Demo Flow
     if (currentInput.toLowerCase().includes('gfr calculator') && gfrDemoStage === 'none') {
+      setIdeCode(GFR_CALCULATOR_HTML);
+      setActiveDevelopTab('preview'); // Switch DevelopView to preview tab
       aiResponse = {
         id: aiMessageId,
-        text: "Okay, I can help you with that! I've generated the HTML, CSS, and JavaScript for a GFR calculator. Here's the code. It's designed with a theme toggle, and this is how it would look in light mode by default:",
+        text: "Okay, I can help you with that! I've generated the HTML, CSS, and JavaScript for a GFR calculator and loaded it into your Develop panel. It's designed with a theme toggle. By default, it's in light mode. Check out the Develop panel to see it live!",
         sender: 'ai',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        codeCompletion: GFR_CALCULATOR_HTML,
-        toolSuggestion: "GFR Calculator Code (Light Mode)",
-        reasoning: "Provides a complete, interactive GFR calculator with HTML, CSS, and JS."
+        codeCompletion: GFR_CALCULATOR_HTML, // Still show in chat for reference
+        toolSuggestion: "GFR Calculator (Live in Develop Panel)",
+        reasoning: "Provides a complete, interactive GFR calculator. View and edit it in the Develop panel."
       };
       setGfrDemoStage('light_mode_shown');
     } else if (currentInput.toLowerCase().includes('add dark mode to this') && gfrDemoStage === 'light_mode_shown') {
+      // The HTML already has dark mode, so we just change the AI's text
+      // and ensure the Develop panel is still showing the preview.
+      setIdeCode(GFR_CALCULATOR_HTML); // Ensure code is still there
+      setActiveDevelopTab('preview');
       aiResponse = {
         id: aiMessageId,
-        text: "Excellent! This GFR calculator code already includes a theme toggle. If you were to click the theme toggle button (which shows a moon icon and 'Dark' text initially) in its top-right corner, it would switch to dark mode. The CSS variables would automatically adjust all the colors. Here's the same code again; imagine it rendered and the dark mode toggled on:",
+        text: "Excellent! This GFR calculator code already includes a theme toggle for dark mode. If you were to click the theme toggle button (moon icon) in its top-right corner in the Develop panel's preview, it would switch to dark mode. The CSS variables automatically adjust all the colors.",
         sender: 'ai',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         codeCompletion: GFR_CALCULATOR_HTML,
-        toolSuggestion: "GFR Calculator Code (Dark Mode view)",
-        reasoning: "Demonstrating the dark mode capability of the provided code via its built-in theme toggle."
+        toolSuggestion: "GFR Calculator (Dark Mode via Toggle)",
+        reasoning: "The existing code supports dark mode. Interact with the preview in the Develop panel to see it."
       };
       setGfrDemoStage('dark_mode_explained');
     } else if (currentInput.includes('😍') && gfrDemoStage === 'dark_mode_explained') {
       aiResponse = {
         id: aiMessageId,
-        text: "Glad you like it! Let me know if there's anything else I can assist with.",
+        text: "Glad you like it! Let me know if there's anything else I can assist with. The code is still available in the Develop panel if you'd like to make further changes.",
         sender: 'ai',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
-      setGfrDemoStage('none');
+      setGfrDemoStage('none'); // Reset demo
     } else {
       // Reset GFR demo if user says something unrelated
       if (gfrDemoStage !== 'none') setGfrDemoStage('none');
       
-      // Original AI logic
       try {
-        console.log("Deep Research Enabled:", deepResearchEnabled);
-
         if (activeView === 'develop' && (currentInput.toLowerCase().includes('code') || currentInput.toLowerCase().includes('write') || currentInput.toLowerCase().includes('function') || currentInput.toLowerCase().includes('implement'))) {
           const completionInput: AiCodeCompletionInput = {
-            codeSnippet: "/* Current editor content could be passed here if integrated */\nconsole.log('Hello');",
-            programmingLanguage: "javascript", // Or derive from context
-            cursorPosition: 0, // Or derive from context
+            codeSnippet: `// User wants to implement: ${currentInput}\n// Provide relevant code for this request.`,
+            programmingLanguage: "javascript", 
+            cursorPosition: 0, 
           };
-          // Modify the prompt slightly to make it clear it's related to the user's text
-          const result = await aiCodeCompletion({ ...completionInput, codeSnippet: `// User wants to implement: ${currentInput}\n// Provide relevant code for this request.`});
+          const result = await aiCodeCompletion(completionInput);
+          setIdeCode(result.completedCode); // Also put this generated code in the IDE
+          setActiveDevelopTab('editor'); // Switch to editor for this general code
           aiResponse = {
             id: aiMessageId,
-            text: `Here's some code based on your request for the develop view:`,
+            text: `Here's some code based on your request. I've also placed it in the Develop panel's editor:`,
             sender: 'ai',
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             codeCompletion: result.completedCode,
@@ -772,7 +779,7 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
       </ScrollArea>
 
       <div className="p-4 border-t border-border space-y-3">
-        <div className="flex items-center justify-start space-x-2 mb-2"> {/* Adjusted margin */}
+        <div className="flex items-center justify-start space-x-2 mb-2">
           <Switch
             id="deep-research"
             checked={deepResearchEnabled}
@@ -835,6 +842,3 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
     </div>
   );
 }
-
-
-    

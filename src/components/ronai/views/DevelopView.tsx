@@ -1,72 +1,56 @@
 
-"use client"; // Ensure this is at the top
+"use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Folder, File, ChevronRight, PanelLeftClose, PanelRightClose, TerminalIcon, Play } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Folder, File, ChevronRight, PanelLeftClose, PanelRightClose, Play, Eye, TerminalIcon, Code2Icon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useIdeContext } from '@/contexts/IdeContext';
 
 const mockFileStructure = [
   { name: 'src', type: 'folder', children: [
     { name: 'components', type: 'folder', children: [
-      { name: 'Button.tsx', type: 'file' },
-      { name: 'Modal.tsx', type: 'file' },
+      { name: 'Button.tsx', type: 'file', content: "// Button.tsx code..." },
+      { name: 'Modal.tsx', type: 'file', content: "// Modal.tsx code..." },
     ]},
     { name: 'pages', type: 'folder', children: [
-      { name: 'index.tsx', type: 'file' },
-      { name: 'about.tsx', type: 'file' },
+      { name: 'index.tsx', type: 'file', content: "// index.tsx code..." },
+      { name: 'about.tsx', type: 'file', content: "// about.tsx code..." },
     ]},
-    { name: 'App.tsx', type: 'file' },
+    { name: 'App.tsx', type: 'file', content: "// App.tsx code..." },
   ]},
   { name: 'public', type: 'folder', children: [
-    { name: 'index.html', type: 'file' },
+    { name: 'index.html', type: 'file', content: "<!-- index.html code -->" },
   ]},
-  { name: 'package.json', type: 'file' },
+  { name: 'package.json', type: 'file', content: "{ \"name\": \"my-app\" }" },
 ];
 
-const mockCode = `
-import React, { useState } from 'react';
-
-function Greeting({ name }) {
-  const [greeting, setGreeting] = useState(\`Hello, \${name}!\`);
-
-  return (
-    <div className="p-4 bg-gray-100 rounded-lg shadow">
-      <h1 className="text-2xl font-bold text-purple-600">
-        {greeting}
-      </h1>
-      <input
-        type="text"
-        value={name}
-        onChange={(e) => setGreeting(\`Hello, \${e.target.value}!\`)}
-        className="mt-2 p-2 border rounded w-full"
-        placeholder="Enter a name"
-      />
-    </div>
-  );
+interface FileTreeItemData {
+  name: string;
+  type: 'folder' | 'file';
+  content?: string;
+  children?: FileTreeItemData[];
 }
 
-export default Greeting;
-`;
-
 interface FileTreeItemProps {
-  item: { name: string; type: 'folder' | 'file'; children?: FileTreeItemProps['item'][] };
+  item: FileTreeItemData;
   level?: number;
-  onFileSelect: (fileName: string) => void;
+  onFileSelect: (fileName: string, fileContent?: string) => void;
 }
 
 const FileTreeItem = ({ item, level = 0, onFileSelect }: FileTreeItemProps) => {
-  const [isOpen, setIsOpen] = useState(item.type === 'folder' && level < 1); // Keep top-level folders open
+  const [isOpen, setIsOpen] = useState(item.type === 'folder' && level < 1);
   const Icon = item.type === 'folder' ? Folder : File;
   const hasChildren = item.children && item.children.length > 0;
 
   const handleToggle = () => {
-    if (hasChildren) {
+    if (item.type === 'folder') {
       setIsOpen(!isOpen);
-    } else if (item.type === 'file') {
-      onFileSelect(item.name);
     }
+    onFileSelect(item.name, item.content);
   };
 
   return (
@@ -76,17 +60,15 @@ const FileTreeItem = ({ item, level = 0, onFileSelect }: FileTreeItemProps) => {
         style={{ paddingLeft: `${level * 0.8 + 0.5}rem` }}
         onClick={handleToggle}
       >
-        {hasChildren ? (
+        {item.type === 'folder' && (
           <ChevronRight className={cn('h-4 w-4 transform transition-transform shrink-0', isOpen ? 'rotate-90' : '')} />
-        ) : (
-          <div className="w-4 h-4 shrink-0" /> // Placeholder for alignment
         )}
-        <Icon className="h-4 w-4 text-primary shrink-0" />
+        <Icon className={cn("h-4 w-4 text-primary shrink-0", item.type === 'file' && 'ml-4')} />
         <span className="text-sm text-foreground truncate">{item.name}</span>
       </div>
       {isOpen && hasChildren && (
         <div>
-          {item.children.map((child, index) => (
+          {item.children!.map((child, index) => (
             <FileTreeItem key={index} item={child} level={level + 1} onFileSelect={onFileSelect} />
           ))}
         </div>
@@ -98,10 +80,33 @@ const FileTreeItem = ({ item, level = 0, onFileSelect }: FileTreeItemProps) => {
 
 export function DevelopView() {
   const [isExplorerOpen, setIsExplorerOpen] = useState(true);
-  const [selectedFile, setSelectedFile] = useState('App.tsx'); // Default selected file
+  const [selectedFileName, setSelectedFileName] = useState('GFR_Calculator.html'); // Default selected file name
+  const { ideCode, setIdeCode, activeDevelopTab, setActiveDevelopTab } = useIdeContext();
+  const [iframeKey, setIframeKey] = useState(0); // Key to force iframe refresh
 
-  const handleFileSelect = (fileName: string) => {
-    setSelectedFile(fileName);
+  useEffect(() => {
+    // When ideCode changes (e.g., from AI chat), force iframe to re-render
+    setIframeKey(prevKey => prevKey + 1);
+  }, [ideCode]);
+
+
+  const handleFileSelect = (fileName: string, fileContent?: string) => {
+    setSelectedFileName(fileName);
+    if (fileContent) {
+      // For this demo, if it's a file from the tree with mock content,
+      // we set the IDE code to that. Otherwise, GFR code remains.
+      // A real IDE would load actual file content.
+      setIdeCode(fileContent);
+      setActiveDevelopTab('editor');
+    } else if (fileName === 'GFR_Calculator.html') {
+      // If GFR_Calculator.html (not in tree but representing context) is "selected"
+      // ensure context's ideCode is shown (which it should be already)
+      // and switch to preview if AI set it.
+    }
+  };
+  
+  const handleEditorChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setIdeCode(event.target.value);
   };
 
   return (
@@ -128,44 +133,66 @@ export function DevelopView() {
           )}
         </div>
 
-        {/* Code Editor and Terminal */}
+        {/* Main Content Area: Editor and Tabs (Preview/Terminal) */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Editor Controls */}
           <div className="p-2 bg-secondary/30 border-b border-border flex items-center space-x-2">
             <Button variant="ghost" size="icon" onClick={() => setIsExplorerOpen(!isExplorerOpen)} className="h-7 w-7">
               {isExplorerOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelRightClose className="h-4 w-4" />}
             </Button>
-            <span className="text-sm font-medium text-foreground truncate flex-1">{selectedFile}</span>
-            <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs">
-              <Play className="h-3.5 w-3.5 mr-1.5" /> Preview
-            </Button>
+            <span className="text-sm font-medium text-foreground truncate flex-1">{selectedFileName}</span>
+            {/* The "Play" button is removed as preview is now a tab */}
           </div>
-          {/* Code Editor */}
-          <ScrollArea className="flex-1 bg-background p-0.5">
-            <pre className="text-sm p-3 rounded-md bg-muted/20 overflow-x-auto h-full">
-              <code className="font-mono whitespace-pre">{`// Displaying content for: ${selectedFile}\n${mockCode}`}</code>
-            </pre>
-          </ScrollArea>
+          
+          {/* Editor Area */}
+          <div className="flex-1 flex flex-col min-h-0">
+            <Tabs value={activeDevelopTab} onValueChange={(value) => setActiveDevelopTab(value as 'editor'|'preview'|'terminal')} className="flex-1 flex flex-col min-h-0">
+              <TabsList className="mx-2 mt-2 self-start">
+                <TabsTrigger value="editor" className="text-xs px-3 py-1 h-auto">
+                  <Code2Icon className="h-3.5 w-3.5 mr-1.5" />Editor
+                </TabsTrigger>
+                <TabsTrigger value="preview" className="text-xs px-3 py-1 h-auto">
+                  <Eye className="h-3.5 w-3.5 mr-1.5" />Preview
+                </TabsTrigger>
+                <TabsTrigger value="terminal" className="text-xs px-3 py-1 h-auto">
+                  <TerminalIcon className="h-3.5 w-3.5 mr-1.5" />Terminal
+                </TabsTrigger>
+              </TabsList>
 
-          {/* Terminal */}
-          <div className="h-1/3 min-h-[150px] bg-secondary/50 border-t border-border flex flex-col">
-             <div className="flex items-center gap-2 text-xs text-muted-foreground p-1.5 border-b border-border">
-                <TerminalIcon className="h-3.5 w-3.5" />
-                <span>TERMINAL</span>
-                <Button variant="ghost" size="icon" className="ml-auto h-5 w-5"><span className="text-base">+</span></Button>
-             </div>
-            <ScrollArea className="flex-1">
-              <div className="text-xs font-mono text-muted-foreground p-2">
-                <p>$ npm install</p>
-                <p>...</p>
-                <p>$ npm start</p>
-                <p className="text-green-400">Compiled successfully!</p>
-                <p>You can now view your app in the browser.</p>
-                <p>  Local:            http://localhost:3000</p>
-                <p>  On Your Network:  http://192.168.1.10:3000</p>
-                <p className="text-foreground mt-2">$ <span className="animate-pulse">▋</span></p>
-              </div>
-            </ScrollArea>
+              <TabsContent value="editor" className="flex-1 flex flex-col min-h-0 p-0.5 mt-0">
+                <Textarea
+                  value={ideCode}
+                  onChange={handleEditorChange}
+                  className="flex-1 w-full h-full text-sm font-mono bg-muted/20 border-0 focus:ring-0 resize-none p-3 rounded-md"
+                  placeholder="Write your code here..."
+                />
+              </TabsContent>
+
+              <TabsContent value="preview" className="flex-1 p-0.5 mt-0">
+                <iframe
+                  key={iframeKey} // Force re-render on code change
+                  srcDoc={ideCode}
+                  title="Preview"
+                  className="w-full h-full border-0 rounded-md bg-white"
+                  sandbox="allow-scripts allow-same-origin"
+                />
+              </TabsContent>
+              
+              <TabsContent value="terminal" className="flex-1 mt-0 p-0.5">
+                <ScrollArea className="h-full bg-secondary/50 rounded-md">
+                  <div className="text-xs font-mono text-muted-foreground p-2">
+                    <p>$ npm install</p>
+                    <p>...</p>
+                    <p>$ npm start</p>
+                    <p className="text-green-400">Compiled successfully!</p>
+                    <p>You can now view your app in the browser.</p>
+                    <p>  Local:            http://localhost:3000</p>
+                    <p>  On Your Network:  http://192.168.1.10:3000</p>
+                    <p className="text-foreground mt-2">$ <span className="animate-pulse">▋</span></p>
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>
