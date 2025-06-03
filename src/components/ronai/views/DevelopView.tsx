@@ -90,9 +90,14 @@ export function DevelopView() {
   const [animatedIdeCode, setAnimatedIdeCode] = useState('');
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const typingSpeed = 15; 
+  const animatedIdeCodeRef = useRef(animatedIdeCode);
 
   useEffect(() => {
-    if (isExternalUpdate && ideCode !== animatedIdeCode) {
+    animatedIdeCodeRef.current = animatedIdeCode;
+  }, [animatedIdeCode]);
+
+  useEffect(() => {
+    if (isExternalUpdate && ideCode !== animatedIdeCodeRef.current) {
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
@@ -116,24 +121,14 @@ export function DevelopView() {
       };
       typingTimeoutRef.current = setTimeout(typeCharacter, typingSpeed);
 
-    } else if (!isExternalUpdate && ideCode !== animatedIdeCode) {
+    } else if (!isExternalUpdate && ideCode !== animatedIdeCodeRef.current) {
       if (typingTimeoutRef.current) {
          clearTimeout(typingTimeoutRef.current); 
       }
       setAnimatedIdeCode(ideCode);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ideCode, isExternalUpdate]); 
-
-  const animatedIdeCodeRef = useRef(animatedIdeCode);
-  useEffect(() => {
-    animatedIdeCodeRef.current = animatedIdeCode;
-  }, [animatedIdeCode]);
-
-  const [iframeKey, setIframeKey] = useState(0); 
-  useEffect(() => {
-    setIframeKey(prevKey => prevKey + 1);
-  }, [animatedIdeCode]);
+  }, [ideCode, isExternalUpdate, setIsExternalUpdate]); // Added setIsExternalUpdate to deps
 
   const handleFileSelect = (fileName: string, fileContent?: string) => {
     setSelectedFileName(fileName);
@@ -213,7 +208,6 @@ export function DevelopView() {
 
               <TabsContent value="preview" className="flex-1 flex flex-col min-h-0 p-0.5 mt-0">
                 <iframe
-                  key={iframeKey} 
                   srcDoc={animatedIdeCode} 
                   title="Preview"
                   className="flex-1 w-full border-0 rounded-md bg-white"
