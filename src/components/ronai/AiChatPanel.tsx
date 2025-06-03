@@ -11,20 +11,30 @@ import { ChatMessageItem } from './ChatMessageItem';
 import { suggestTool, type SuggestToolInput } from '@/ai/flows/ai-tool-selector';
 import { aiCodeCompletion, type AiCodeCompletionInput } from '@/ai/flows/ai-code-completion';
 
-const initialMessages: ChatMessage[] = [
-  {
-    id: '0',
-    text: 'Hello! How can I help you with Ron AI tools today?',
-    sender: 'ai',
-    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-  },
-];
+// Define the base structure of the initial message without the timestamp
+const initialMessageBase: Omit<ChatMessage, 'timestamp'> & { timestamp: string | null } = {
+  id: '0',
+  text: 'Hello! How can I help you with Ron AI tools today?',
+  sender: 'ai',
+  timestamp: null, // Initialize timestamp as null
+};
 
 export function AiChatPanel({ activeView }: { activeView: ActiveView }) {
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const [messages, setMessages] = useState<ChatMessage[]>([initialMessageBase]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Set the timestamp for the initial message on the client-side after mount
+    setMessages((prevMessages) =>
+      prevMessages.map((msg) =>
+        msg.id === '0' && msg.timestamp === null
+          ? { ...msg, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
+          : msg
+      )
+    );
+  }, []); // Empty dependency array ensures this runs once on mount
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -39,7 +49,7 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView }) {
     if (input.trim() === '') return;
 
     const newUserMessage: ChatMessage = {
-      id: String(messages.length + 1),
+      id: String(Date.now()), // Use a more unique ID like Date.now() or a UUID
       text: input,
       sender: 'user',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -49,21 +59,18 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView }) {
     setIsLoading(true);
 
     let aiResponse: ChatMessage | null = null;
+    const aiMessageId = String(Date.now() + 1); // Ensure unique ID for AI response
 
     try {
       if (activeView === 'develop' && (input.toLowerCase().includes('code') || input.toLowerCase().includes('write') || input.toLowerCase().includes('function'))) {
         const completionInput: AiCodeCompletionInput = {
           codeSnippet: "/* Current editor content could be passed here if integrated */\nconsole.log('Hello');",
-          programmingLanguage: "javascript", // This could be dynamic
-          cursorPosition: 0, // This could be dynamic
+          programmingLanguage: "javascript", 
+          cursorPosition: 0, 
         };
-        // For code completion, the prompt is in the input message itself.
-        // We'll augment the AI flow to use the user's message as the primary driver for code generation.
-        // The provided aiCodeCompletionFlow has a prompt template that takes codeSnippet, language, cursorPosition.
-        // We'll make the user input the 'codeSnippet' effectively for a chat-based completion.
         const result = await aiCodeCompletion({ ...completionInput, codeSnippet: `// User wants: ${input}\n`});
         aiResponse = {
-          id: String(messages.length + 2),
+          id: aiMessageId,
           text: `Here's some code based on your request:`,
           sender: 'ai',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -73,7 +80,7 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView }) {
         const toolInput: SuggestToolInput = { prompt: input };
         const result = await suggestTool(toolInput);
         aiResponse = {
-          id: String(messages.length + 2),
+          id: aiMessageId,
           text: `Based on your request, I have a suggestion.`,
           sender: 'ai',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -84,7 +91,7 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView }) {
     } catch (error) {
       console.error("AI flow error:", error);
       aiResponse = {
-        id: String(messages.length + 2),
+        id: aiMessageId,
         text: "Sorry, I encountered an error trying to process your request.",
         sender: 'ai',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
