@@ -1,8 +1,8 @@
 
 "use client";
 
+import type { ChatMessage, ActiveView } from '@/types'; // Added ChatMessage
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { ActiveView } from '@/types';
 import { AiChatPanel } from './AiChatPanel';
 import { ControlBar } from './ControlBar';
 import { ThinSidebar } from './ThinSidebar';
@@ -12,6 +12,7 @@ import { ToolsView } from './views/ToolsView';
 import { cn } from '@/lib/utils';
 import { PanelLeftClose } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useIdeContext } from '@/contexts/IdeContext'; // Import useIdeContext
 
 const MIN_PANEL_WIDTH_PERCENT = 15;
 const MAX_PANEL_WIDTH_PERCENT = 80;
@@ -29,6 +30,7 @@ export function RonAILayout() {
   const panelContainerRef = useRef<HTMLDivElement>(null); 
   const slidablePanelRef = useRef<HTMLDivElement>(null); 
 
+  const { setIdeCode, setActiveDevelopTab, setIsExternalUpdate } = useIdeContext(); // Consume IDE context
 
   useEffect(() => {
     setIsPanelVisible(activePanel !== null);
@@ -97,6 +99,26 @@ export function RonAILayout() {
     };
   }, [isResizing, initialMouseX, initialPanelWidthPx, isPanelVisible]);
 
+  const handleToolPreviewRequest = useCallback((action: ChatMessage['previewAction']) => {
+    if (!action) return;
+    setActivePanel(action.targetPanel);
+    
+    // Ensure panel is visible and has some width if it was closed
+    if (action.targetPanel && activePanel !== action.targetPanel) {
+        setIsPanelVisible(true);
+        setPanelWidth(prev => Math.max(prev, DEFAULT_PANEL_WIDTH_PERCENT));
+    }
+
+
+    if (action.targetPanel === 'develop') {
+      setIsExternalUpdate(true); // Signal that the IDE update is from an external source for animation
+      setIdeCode(action.code);
+      setActiveDevelopTab(action.targetDevelopTab);
+    }
+    // Add logic for other targetPanel types if needed in the future
+    // e.g., if (action.targetPanel === 'tools') { ... }
+  }, [setActivePanel, setIdeCode, setActiveDevelopTab, setIsExternalUpdate, activePanel]);
+
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
@@ -108,13 +130,13 @@ export function RonAILayout() {
           <div
             ref={slidablePanelRef}
             className={cn(
-              "h-full bg-background flex flex-col relative border-r border-border", // Ensures this panel is a flex column
-              !isResizing && "transition-width duration-200 ease-in-out", 
-              isPanelVisible ? "p-0" : "p-0 overflow-hidden" 
+              "h-full bg-background flex flex-col relative border-r border-border", 
+              !isResizing && "transition-all duration-300 ease-in-out", // Applied transition for width and potentially opacity/transform later
+              isPanelVisible ? "p-0" : "p-0 w-0 overflow-hidden" // Control visibility and width
             )}
             style={{ width: isPanelVisible ? `${panelWidth}%` : '0px' }}
           >
-            {activePanel && (
+            {activePanel && ( // Only render content if activePanel is set
               <>
                 <div className="flex-shrink-0 p-2 border-b border-border bg-muted/30 flex justify-between items-center">
                   <span className="font-semibold text-sm capitalize text-foreground">{activePanel}</span>
@@ -122,8 +144,6 @@ export function RonAILayout() {
                     <PanelLeftClose className="h-4 w-4" />
                   </Button>
                 </div>
-                {/* This div is the direct parent for BrowserView, DevelopView, ToolsView */}
-                {/* It uses flex-1 flex flex-col to take remaining height and enable its children (like DevelopView) to also use flex-1 */}
                 <div className="flex-1 flex flex-col min-h-0 overflow-hidden"> 
                   {activePanel === 'browser' && <BrowserView />}
                   {activePanel === 'develop' && <DevelopView />}
@@ -134,7 +154,7 @@ export function RonAILayout() {
           </div>
 
           {/* Resizer Handle */}
-          {isPanelVisible && (
+          {isPanelVisible && activePanel && ( // Only show resizer if panel is visible and active
             <div
               onMouseDown={handleMouseDownOnResizer}
               className="w-1.5 cursor-col-resize bg-border hover:bg-primary/30 flex-shrink-0 flex items-center justify-center group"
@@ -146,7 +166,7 @@ export function RonAILayout() {
 
           {/* AI Chat Panel - takes remaining space */}
           <div className="flex-1 h-full min-w-0"> 
-            <AiChatPanel activeView={activePanel} />
+            <AiChatPanel activeView={activePanel} onToolPreviewRequest={handleToolPreviewRequest} />
           </div>
         </div>
       </div>

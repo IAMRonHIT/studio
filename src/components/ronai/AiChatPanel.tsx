@@ -630,7 +630,12 @@ const GFR_CALCULATOR_HTML = `
 
 type GfrDemoStage = 'none' | 'light_mode_shown' | 'dark_mode_explained';
 
-export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
+interface AiChatPanelProps {
+  activeView: ActiveView | null;
+  onToolPreviewRequest: (action: NonNullable<ChatMessage['previewAction']>) => void;
+}
+
+export function AiChatPanel({ activeView, onToolPreviewRequest }: AiChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([initialMessageBase]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -678,31 +683,34 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
 
     // GFR Demo Flow
     if (currentInput.toLowerCase().includes('gfr calculator') && gfrDemoStage === 'none') {
-      setIsExternalUpdate(true); // Signal to IDE that this is an AI update for animation
-      setIdeCode(GFR_CALCULATOR_HTML);
-      setActiveDevelopTab('preview'); 
       aiResponse = {
         id: aiMessageId,
-        text: "Okay, I can help you with that! I've generated the HTML, CSS, and JavaScript for a GFR calculator and loaded it into your Develop panel. It's designed with a theme toggle. By default, it's in light mode. Check out the Develop panel to see it live!",
+        text: "Okay, I can help you with that! I've prepared a GFR calculator.\n\nI'll load it into your Develop panel when you're ready to preview. Here's a summary of what it expects and what it provides:",
         sender: 'ai',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        codeCompletion: GFR_CALCULATOR_HTML, 
-        toolSuggestion: "GFR Calculator (Live in Develop Panel)",
-        reasoning: "Provides a complete, interactive GFR calculator. View and edit it in the Develop panel."
+        toolSuggestion: "GFR Calculator",
+        reasoning: "Generates an interactive GFR calculator. Click 'Generate Preview' to see it in the Develop panel.",
+        inputRequirements: `Input:\n- Serum Creatinine (Number, mg/dL or µmol/L)\n- Age (Number, years, >=18)\n- Sex (String: 'male' or 'female')\n- Weight (Number, kg, optional for Cockcroft-Gault)`,
+        outputData: `Output:\n- GFR Value (Number, mL/min/1.73 m²)\n- CKD Stage (String)\n- Interpretation (String)`,
+        previewAction: {
+          code: GFR_CALCULATOR_HTML,
+          targetPanel: 'develop',
+          targetDevelopTab: 'preview',
+        }
       };
       setGfrDemoStage('light_mode_shown');
     } else if (currentInput.toLowerCase().includes('add dark mode to this') && gfrDemoStage === 'light_mode_shown') {
-      setIsExternalUpdate(true); // Signal for animation even though code is same
-      setIdeCode(GFR_CALCULATOR_HTML); 
-      setActiveDevelopTab('preview');
+      // This step in the demo implies the user has already seen the preview via "Generate Preview"
+      // So the code would already be in the IDE. The AI just explains.
       aiResponse = {
         id: aiMessageId,
         text: "Excellent! This GFR calculator code already includes a theme toggle for dark mode. If you were to click the theme toggle button (moon icon) in its top-right corner in the Develop panel's preview, it would switch to dark mode. The CSS variables automatically adjust all the colors.",
         sender: 'ai',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        codeCompletion: GFR_CALCULATOR_HTML,
+        // No need for previewAction here as the code is assumed to be in the IDE already
+        // and the action is about explaining the existing preview.
         toolSuggestion: "GFR Calculator (Dark Mode via Toggle)",
-        reasoning: "The existing code supports dark mode. Interact with the preview in the Develop panel to see it."
+        reasoning: "The existing code in the Develop panel supports dark mode. Interact with the preview to see it."
       };
       setGfrDemoStage('dark_mode_explained');
     } else if (currentInput.includes('😍') && gfrDemoStage === 'dark_mode_explained') {
@@ -733,7 +741,7 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
             text: `Here's some code based on your request. I've also placed it in the Develop panel's editor:`,
             sender: 'ai',
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            codeCompletion: result.completedCode,
+            // codeCompletion: result.completedCode, // Removed from direct display here
           };
         } else {
           const toolInput: SuggestToolInput = { prompt: currentInput };
@@ -774,7 +782,7 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
       <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
         <div className="space-y-4">
           {messages.map((msg) => (
-            <ChatMessageItem key={msg.id} message={msg} />
+            <ChatMessageItem key={msg.id} message={msg} onToolPreviewRequest={onToolPreviewRequest} />
           ))}
         </div>
       </ScrollArea>

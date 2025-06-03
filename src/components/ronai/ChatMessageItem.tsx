@@ -12,28 +12,38 @@ import React, { useState, useEffect } from 'react';
 
 type SuggestionStage = 'initial' | 'preview_shown' | 'critiquing' | 'dismissed';
 
-export function ChatMessageItem({ message }: { message: ChatMessage }) {
+interface ChatMessageItemProps {
+  message: ChatMessage;
+  onToolPreviewRequest: (action: NonNullable<ChatMessage['previewAction']>) => void;
+}
+
+export function ChatMessageItem({ message, onToolPreviewRequest }: ChatMessageItemProps) {
   const isUser = message.sender === 'user';
   const Icon = isUser ? User : Bot;
   const { toast } = useToast();
   const [critiqueText, setCritiqueText] = useState('');
   const [suggestionStage, setSuggestionStage] = useState<SuggestionStage>('initial');
-  const [mockPreviewContent, setMockPreviewContent] = useState<string | null>(null);
+  // Mock preview content within the card is no longer the primary mechanism
+  // const [mockPreviewContent, setMockPreviewContent] = useState<string | null>(null);
 
   useEffect(() => {
     if (message.toolSuggestion) {
       setSuggestionStage('initial');
-      setMockPreviewContent(null);
+      // setMockPreviewContent(null);
     }
   }, [message.toolSuggestion]);
 
   const handleGeneratePreview = () => {
-    toast({
-      title: "Preview Generation",
-      description: `Requesting preview for ${message.toolSuggestion}... (mock action)`,
-    });
-    setMockPreviewContent(`This is a mock preview for the '${message.toolSuggestion}' tool. It would show a visual representation or key features here.`);
-    setSuggestionStage('preview_shown');
+    if (message.previewAction && onToolPreviewRequest) {
+      onToolPreviewRequest(message.previewAction);
+      setSuggestionStage('dismissed'); // Assuming 'dismissed' means handled and card UI changes
+    } else {
+      toast({
+        title: "Preview Action Unavailable",
+        description: `No preview action defined for ${message.toolSuggestion}.`,
+        variant: "destructive",
+      });
+    }
   };
 
   const handleNoThanks = () => {
@@ -45,10 +55,26 @@ export function ChatMessageItem({ message }: { message: ChatMessage }) {
   };
 
   const handleImplementLocally = () => {
-    toast({
-      title: "Local Implementation",
-      description: `Preparing to implement ${message.toolSuggestion} locally... (mock action)`,
-    });
+    // This would ideally also use onToolPreviewRequest or a similar mechanism
+    // if "implement locally" means loading into the IDE editor.
+    if (message.previewAction && onToolPreviewRequest) {
+        // Modify the action to target the editor
+        const editorAction = {
+            ...message.previewAction,
+            targetDevelopTab: 'editor' as 'editor' | 'preview' | 'terminal'
+        };
+        onToolPreviewRequest(editorAction);
+        toast({
+          title: "Local Implementation",
+          description: `${message.toolSuggestion} code has been loaded into the Develop panel editor.`,
+        });
+    } else {
+        toast({
+          title: "Local Implementation Failed",
+          description: `Could not load ${message.toolSuggestion} into the editor.`,
+           variant: "destructive",
+        });
+    }
     setSuggestionStage('dismissed'); 
   };
 
@@ -70,29 +96,44 @@ export function ChatMessageItem({ message }: { message: ChatMessage }) {
       description: `Your critique for ${message.toolSuggestion}: "${critiqueText}" has been noted (mock action).`,
     });
     setCritiqueText('');
-    setSuggestionStage('preview_shown'); 
+    setSuggestionStage('preview_shown'); // Or back to 'initial' if critique means re-evaluating
   };
 
   const renderToolSuggestionContent = () => {
-    if (suggestionStage === 'dismissed') {
-      return <p className="text-xs text-foreground/70 p-2">Suggestion dismissed.</p>;
+    if (suggestionStage === 'dismissed' && message.previewAction) {
+      // If dismissed because preview was generated, show a different message or hide actions.
+      return <p className="text-xs text-foreground/70 p-2">Preview requested. Check the Develop panel.</p>;
     }
+    if (suggestionStage === 'dismissed') {
+       return <p className="text-xs text-foreground/70 p-2">Suggestion dismissed.</p>;
+    }
+
 
     return (
       <>
-        {mockPreviewContent && suggestionStage !== 'initial' && (
+        {/* Input/Output Requirements Display */}
+        {message.inputRequirements && (
           <CardContent className="p-2 pt-1 text-xs border-t border-border/30 mt-2">
-            <p className="font-semibold text-foreground/90">Mock Preview:</p>
-            <p className="text-foreground/80 italic">{mockPreviewContent}</p>
+            <h5 className="text-xs font-semibold text-foreground/80 mb-0.5">Input Requirements:</h5>
+            <pre className="text-xs text-foreground/70 whitespace-pre-wrap bg-black/10 dark:bg-black/20 p-1.5 rounded-sm overflow-x-auto">{message.inputRequirements}</pre>
           </CardContent>
         )}
-        <CardFooter className="p-2 flex flex-col space-y-2.5">
+        {message.outputData && (
+          <CardContent className="p-2 pt-1 text-xs border-t border-border/30 mt-1.5">
+            <h5 className="text-xs font-semibold text-foreground/80 mb-0.5">Output Data:</h5>
+            <pre className="text-xs text-foreground/70 whitespace-pre-wrap bg-black/10 dark:bg-black/20 p-1.5 rounded-sm overflow-x-auto">{message.outputData}</pre>
+          </CardContent>
+        )}
+        
+        {/* Action Buttons Footer */}
+        <CardFooter className="p-2 flex flex-col space-y-2.5 mt-2 border-t border-border/30">
           {suggestionStage === 'initial' && (
             <div className="flex space-x-2 w-full">
               <Button
                 size="sm"
                 className="flex-1 text-xs py-1 h-auto bg-gradient-to-b from-[hsl(250_70%_25%)] to-[hsl(var(--primary))] hover:from-[hsl(250_70%_25%)] hover:to-[hsl(var(--primary)/0.9)] text-primary-foreground"
                 onClick={handleGeneratePreview}
+                disabled={!message.previewAction} // Disable if no preview action defined
               >
                 <Eye className="mr-1.5 h-3.5 w-3.5" />
                 Generate Preview
@@ -110,6 +151,8 @@ export function ChatMessageItem({ message }: { message: ChatMessage }) {
           )}
 
           {(suggestionStage === 'preview_shown' || suggestionStage === 'critiquing') && (
+            // 'preview_shown' state might be less relevant now if preview opens main panel
+            // For now, keeping this flow if user somehow gets here (e.g., future non-panel preview)
             <div className="flex space-x-2 w-full">
               <Button
                 size="sm"
@@ -191,7 +234,6 @@ export function ChatMessageItem({ message }: { message: ChatMessage }) {
               {renderToolSuggestionContent()}
             </Card>
           )}
-          {/* The codeCompletion display block has been removed from here */}
           <p className={cn('text-xs mt-1.5', isUser ? 'text-primary-foreground/70 text-right' : 'text-muted-foreground/70 text-left')}>
             {message.timestamp}
           </p>
@@ -200,3 +242,4 @@ export function ChatMessageItem({ message }: { message: ChatMessage }) {
     </div>
   );
 }
+
