@@ -11,13 +11,18 @@ export function ChatMessageItem({ message }: { message: ChatMessage }) {
   return (
     <div className={cn('flex mb-4', isUser ? 'justify-end' : 'justify-start')}>
       <div className={cn('flex items-end gap-2 max-w-[80%]', isUser ? 'flex-row-reverse' : 'flex-row')}>
-        <Icon className={cn('h-6 w-6 rounded-full p-0.5 shrink-0', isUser ? 'bg-gradient-to-b from-[hsl(250_70%_25%)] to-[hsl(var(--primary))] text-primary-foreground' : 'bg-secondary text-secondary-foreground')} />
+        <Icon className={cn(
+          'h-6 w-6 rounded-full p-0.5 shrink-0',
+          isUser
+            ? 'bg-gradient-to-b from-[hsl(250_70%_25%)] to-[hsl(var(--primary))] text-primary-foreground'
+            : 'bg-black/20 backdrop-blur-md border border-white/10 text-secondary-foreground'
+        )} />
         <div
           className={cn(
             'p-3 rounded-lg shadow-md',
-            isUser 
-              ? 'bg-gradient-to-r from-[hsl(250_70%_25%)] to-[hsl(var(--primary))] text-primary-foreground rounded-br-none' 
-              : 'bg-secondary text-secondary-foreground rounded-bl-none'
+            isUser
+              ? 'bg-gradient-to-r from-[hsl(250_70%_25%)] to-[hsl(var(--primary))] text-primary-foreground rounded-br-none'
+              : 'bg-gradient-to-b from-black/10 via-black/20 to-black/30 backdrop-blur-md border border-white/10 text-secondary-foreground rounded-bl-none'
           )}
         >
           <p className="text-sm whitespace-pre-wrap break-words">{message.text}</p>
