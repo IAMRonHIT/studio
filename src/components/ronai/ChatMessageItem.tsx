@@ -3,8 +3,8 @@
 
 import type { ChatMessage } from '@/types';
 import { cn } from '@/lib/utils';
-import { Bot, User, Code, FileText, Eye, Download, Send as SendIcon, ThumbsDown, Edit3 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Bot, User, FileText, Eye, Download, Send as SendIcon, ThumbsDown, Edit3 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from "@/hooks/use-toast";
@@ -49,8 +49,7 @@ export function ChatMessageItem({ message }: { message: ChatMessage }) {
       title: "Local Implementation",
       description: `Preparing to implement ${message.toolSuggestion} locally... (mock action)`,
     });
-    // Potentially set stage to 'dismissed' or a new 'implemented' state
-    setSuggestionStage('dismissed'); // For now, dismiss after implementation attempt
+    setSuggestionStage('dismissed'); 
   };
 
   const handleCritiqueOrSuggest = () => {
@@ -71,7 +70,7 @@ export function ChatMessageItem({ message }: { message: ChatMessage }) {
       description: `Your critique for ${message.toolSuggestion}: "${critiqueText}" has been noted (mock action).`,
     });
     setCritiqueText('');
-    setSuggestionStage('preview_shown'); // Go back to preview stage after submitting critique
+    setSuggestionStage('preview_shown'); 
   };
 
   const renderToolSuggestionContent = () => {
@@ -192,19 +191,7 @@ export function ChatMessageItem({ message }: { message: ChatMessage }) {
               {renderToolSuggestionContent()}
             </Card>
           )}
-          {message.codeCompletion && (
-             <Card className="mt-2 bg-background/20 dark:bg-black/30 border-border/50 backdrop-blur-sm">
-              <CardHeader className="p-2">
-                 <div className="flex items-center gap-2">
-                  <Code className="h-4 w-4 text-foreground/80" />
-                  <CardTitle className="text-xs font-semibold text-foreground/80">Code Completion</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="p-2">
-                <pre className="text-xs bg-muted/20 p-2 rounded overflow-x-auto"><code className="text-foreground">{message.codeCompletion}</code></pre>
-              </CardContent>
-            </Card>
-          )}
+          {/* The codeCompletion display block has been removed from here */}
           <p className={cn('text-xs mt-1.5', isUser ? 'text-primary-foreground/70 text-right' : 'text-muted-foreground/70 text-left')}>
             {message.timestamp}
           </p>
