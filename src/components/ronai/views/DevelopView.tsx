@@ -53,7 +53,7 @@ const FileTreeItem = ({ item, level = 0, onFileSelect }: FileTreeItemProps) => {
     if (item.type === 'file' || (item.type === 'folder' && !isOpen)) {
       onFileSelect(item.name, item.content);
     } else if (item.type === 'folder' && isOpen) {
-      onFileSelect(item.name, undefined); 
+      onFileSelect(item.name, undefined);
     }
   };
 
@@ -84,12 +84,12 @@ const FileTreeItem = ({ item, level = 0, onFileSelect }: FileTreeItemProps) => {
 
 export function DevelopView() {
   const [isExplorerOpen, setIsExplorerOpen] = useState(true);
-  const [selectedFileName, setSelectedFileName] = useState('IDE Editor'); 
+  const [selectedFileName, setSelectedFileName] = useState('IDE Editor');
   const { ideCode, setIdeCode, activeDevelopTab, setActiveDevelopTab, isExternalUpdate, setIsExternalUpdate } = useIdeContext();
-  
+
   const [animatedIdeCode, setAnimatedIdeCode] = useState('');
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const typingSpeed = 15; 
+  const typingSpeed = 15;
   const animatedIdeCodeRef = useRef(animatedIdeCode);
 
   useEffect(() => {
@@ -101,8 +101,8 @@ export function DevelopView() {
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
-      setAnimatedIdeCode(''); 
-      
+      setAnimatedIdeCode('');
+
       let index = 0;
       const typeCharacter = () => {
         if (index < ideCode.length) {
@@ -113,40 +113,40 @@ export function DevelopView() {
           if (typingTimeoutRef.current) {
             clearTimeout(typingTimeoutRef.current);
           }
-           if (animatedIdeCodeRef.current !== ideCode) { 
+           if (animatedIdeCodeRef.current !== ideCode) {
             setAnimatedIdeCode(ideCode);
           }
-          setIsExternalUpdate(false); 
+          setIsExternalUpdate(false);
         }
       };
       typingTimeoutRef.current = setTimeout(typeCharacter, typingSpeed);
 
     } else if (!isExternalUpdate && ideCode !== animatedIdeCodeRef.current) {
       if (typingTimeoutRef.current) {
-         clearTimeout(typingTimeoutRef.current); 
+         clearTimeout(typingTimeoutRef.current);
       }
       setAnimatedIdeCode(ideCode);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ideCode, isExternalUpdate]); 
+  }, [ideCode, isExternalUpdate]);
 
   const handleFileSelect = (fileName: string, fileContent?: string) => {
     setSelectedFileName(fileName);
     if (fileContent) {
-      setIsExternalUpdate(true); 
+      setIsExternalUpdate(true);
       setIdeCode(fileContent);
       setActiveDevelopTab('editor');
     }
   };
-  
+
   const handleEditorChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (typingTimeoutRef.current) { 
+    if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
-    setIsExternalUpdate(false); 
+    setIsExternalUpdate(false);
     const newCode = event.target.value;
-    setAnimatedIdeCode(newCode); 
-    setIdeCode(newCode);         
+    setAnimatedIdeCode(newCode);
+    setIdeCode(newCode);
   };
 
   return (
@@ -182,9 +182,9 @@ export function DevelopView() {
               {selectedFileName || (activeDevelopTab === 'editor' ? "Editor" : activeDevelopTab === 'preview' ? "Preview" : "Terminal" )}
             </span>
           </div>
-          
-          <div className="flex-1 flex flex-col min-h-0">
-            <Tabs value={activeDevelopTab} onValueChange={(value) => setActiveDevelopTab(value as 'editor'|'preview'|'terminal')} className="flex-1 flex flex-col min-h-0">
+
+          <div className="flex-1 flex flex-col min-h-0"> {/* Ensures this container can pass flex sizing down */}
+            <Tabs value={activeDevelopTab} onValueChange={(value) => setActiveDevelopTab(value as 'editor'|'preview'|'terminal')} className="flex-1 flex flex-col min-h-0"> {/* Tabs component takes full height and is a flex column */}
               <TabsList className="mx-2 mt-2 self-start">
                 <TabsTrigger value="editor" className="text-xs px-3 py-1 h-auto">
                   <Code2Icon className="h-3.5 w-3.5 mr-1.5" />Editor
@@ -197,26 +197,26 @@ export function DevelopView() {
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="editor" className="flex-1 flex flex-col min-h-0 mt-0">
+              <TabsContent value="editor" className="flex-1 flex flex-col min-h-0 mt-0"> {/* Editor TabContent takes full height, is a flex column */}
                 <Textarea
-                  value={animatedIdeCode} 
+                  value={animatedIdeCode}
                   onChange={handleEditorChange}
-                  className="flex-1 w-full text-sm font-mono bg-muted/20 border-0 focus:ring-0 resize-none p-3 rounded-md"
+                  className="flex-1 w-full text-sm font-mono bg-muted/20 border-0 focus:ring-0 resize-none p-3 rounded-md" /* Textarea takes full height */
                   placeholder="Code will appear here..."
                 />
               </TabsContent>
 
-              <TabsContent value="preview" className="flex-1 flex flex-col min-h-0 mt-0">
+              <TabsContent value="preview" className="flex-1 flex flex-col min-h-0 mt-0"> {/* Preview TabContent takes full height, is a flex column */}
                 <iframe
-                  srcDoc={animatedIdeCode} 
+                  srcDoc={animatedIdeCode}
                   title="Preview"
-                  className="flex-1 w-full border-0 rounded-md bg-white"
+                  className="flex-1 w-full border-0 rounded-md bg-white" /* iframe takes full height */
                   sandbox="allow-scripts allow-same-origin"
                 />
               </TabsContent>
-              
-              <TabsContent value="terminal" className="flex-1 flex flex-col min-h-0 mt-0">
-                <ScrollArea className="flex-1 bg-secondary/50 rounded-md">
+
+              <TabsContent value="terminal" className="flex-1 flex flex-col min-h-0 mt-0"> {/* Terminal TabContent takes full height, is a flex column */}
+                <ScrollArea className="flex-1 bg-secondary/50 rounded-md"> {/* ScrollArea takes full height */}
                   <div className="text-xs font-mono text-muted-foreground p-2">
                     <p>$ npm install</p>
                     <p>...</p>
@@ -236,3 +236,5 @@ export function DevelopView() {
     </div>
   );
 }
+
+    
