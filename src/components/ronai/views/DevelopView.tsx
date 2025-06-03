@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Folder, File, ChevronRight } from 'lucide-react';
@@ -53,7 +54,7 @@ const FileTreeItem = ({ item, level = 0 }: { item: any, level?: number }) => {
 
   return (
     <div>
-      <div 
+      <div
         className="flex items-center space-x-2 p-1.5 hover:bg-secondary rounded-md cursor-pointer"
         style={{ paddingLeft: `${level * 1 + 0.5}rem` }}
         onClick={() => hasChildren && setIsOpen(!isOpen)}
