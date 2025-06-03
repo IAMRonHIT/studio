@@ -10,7 +10,7 @@ import { Send, Paperclip, Volume2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { ChatMessageItem } from './ChatMessageItem';
-import { suggestTool, type SuggestToolInput } from '@/ai/flows/ai-tool-selector';
+import { suggestTool, type SuggestToolInput, type SuggestToolOutput } from '@/ai/flows/ai-tool-selector';
 import { aiCodeCompletion, type AiCodeCompletionInput } from '@/ai/flows/ai-code-completion';
 import { useIdeContext } from '@/contexts/IdeContext';
 
@@ -700,15 +700,11 @@ export function AiChatPanel({ activeView, onToolPreviewRequest }: AiChatPanelPro
       };
       setGfrDemoStage('light_mode_shown');
     } else if (currentInput.toLowerCase().includes('add dark mode to this') && gfrDemoStage === 'light_mode_shown') {
-      // This step in the demo implies the user has already seen the preview via "Generate Preview"
-      // So the code would already be in the IDE. The AI just explains.
       aiResponse = {
         id: aiMessageId,
         text: "Excellent! This GFR calculator code already includes a theme toggle for dark mode. If you were to click the theme toggle button (moon icon) in its top-right corner in the Develop panel's preview, it would switch to dark mode. The CSS variables automatically adjust all the colors.",
         sender: 'ai',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        // No need for previewAction here as the code is assumed to be in the IDE already
-        // and the action is about explaining the existing preview.
         toolSuggestion: "GFR Calculator (Dark Mode via Toggle)",
         reasoning: "The existing code in the Develop panel supports dark mode. Interact with the preview to see it."
       };
@@ -722,37 +718,59 @@ export function AiChatPanel({ activeView, onToolPreviewRequest }: AiChatPanelPro
       };
       setGfrDemoStage('none'); 
     } else {
-      
+      // Reset GFR demo stage if conversation deviates
       if (gfrDemoStage !== 'none') setGfrDemoStage('none');
       
       try {
-        if (activeView === 'develop' && (currentInput.toLowerCase().includes('code') || currentInput.toLowerCase().includes('write') || currentInput.toLowerCase().includes('function') || currentInput.toLowerCase().includes('implement'))) {
+        const toolInput: SuggestToolInput = { prompt: currentInput };
+        const toolResult = await suggestTool(toolInput);
+
+        if (toolResult.toolSuggestion === "CONVERSATIONAL_RESPONSE") {
+          aiResponse = {
+            id: aiMessageId,
+            text: toolResult.reasoning, // This is the AI's direct conversational reply
+            sender: 'ai',
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          };
+        } else if (toolResult.toolSuggestion === "Code Editor Helper") {
           const completionInput: AiCodeCompletionInput = {
-            codeSnippet: `// User wants to implement: ${currentInput}\n// Provide relevant code for this request.`,
+            codeSnippet: `// User wants to implement: ${currentInput}\n// Task context: ${toolResult.reasoning}\n// Provide relevant code for this request.`,
             programmingLanguage: "javascript", 
             cursorPosition: 0, 
           };
-          const result = await aiCodeCompletion(completionInput);
-          setIsExternalUpdate(true); // Signal for animation
-          setIdeCode(result.completedCode); 
+          const codeCompletionResult = await aiCodeCompletion(completionInput);
+          
+          setIsExternalUpdate(true); 
+          setIdeCode(codeCompletionResult.completedCode); 
           setActiveDevelopTab('editor'); 
+
           aiResponse = {
             id: aiMessageId,
-            text: `Here's some code based on your request. I've also placed it in the Develop panel's editor:`,
+            text: `I've drafted some code for you based on your request for the "${toolResult.toolSuggestion}". You can find it in the Develop panel's editor.`,
             sender: 'ai',
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            // codeCompletion: result.completedCode, // Removed from direct display here
+            toolSuggestion: toolResult.toolSuggestion,
+            reasoning: toolResult.reasoning,
+            // No direct previewAction for "Code Editor Helper", as code goes to editor.
+          };
+        } else if (toolResult.toolSuggestion) { // Another tool was suggested (e.g., Image Generator)
+           aiResponse = {
+            id: aiMessageId,
+            text: `Based on your request, I suggest the '${toolResult.toolSuggestion}' tool. ${toolResult.reasoning}`,
+            sender: 'ai',
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            toolSuggestion: toolResult.toolSuggestion,
+            reasoning: toolResult.reasoning,
+            // For now, other dynamically suggested tools won't have an automatic previewAction
+            // This could be extended in the future.
           };
         } else {
-          const toolInput: SuggestToolInput = { prompt: currentInput };
-          const result = await suggestTool(toolInput);
+          // Fallback or if suggestTool returns an empty suggestion but not "CONVERSATIONAL_RESPONSE"
           aiResponse = {
             id: aiMessageId,
-            text: `Based on your request, I have a suggestion for the '${result.toolSuggestion}' tool.`,
+            text: "I'm not sure how to help with that specific request. Can you try rephrasing?",
             sender: 'ai',
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            toolSuggestion: result.toolSuggestion,
-            reasoning: result.reasoning,
           };
         }
       } catch (error) {
