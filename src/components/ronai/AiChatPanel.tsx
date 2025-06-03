@@ -11,22 +11,20 @@ import { ChatMessageItem } from './ChatMessageItem';
 import { suggestTool, type SuggestToolInput } from '@/ai/flows/ai-tool-selector';
 import { aiCodeCompletion, type AiCodeCompletionInput } from '@/ai/flows/ai-code-completion';
 
-// Define the base structure of the initial message without the timestamp
 const initialMessageBase: Omit<ChatMessage, 'timestamp'> & { timestamp: string | null } = {
   id: '0',
   text: 'Hello! How can I help you with Ron AI tools today?',
   sender: 'ai',
-  timestamp: null, // Initialize timestamp as null
+  timestamp: null, 
 };
 
-export function AiChatPanel({ activeView }: { activeView: ActiveView }) {
+export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) { // Allow activeView to be null
   const [messages, setMessages] = useState<ChatMessage[]>([initialMessageBase]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Set the timestamp for the initial message on the client-side after mount
     setMessages((prevMessages) =>
       prevMessages.map((msg) =>
         msg.id === '0' && msg.timestamp === null
@@ -34,7 +32,7 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView }) {
           : msg
       )
     );
-  }, []); // Empty dependency array ensures this runs once on mount
+  }, []); 
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -49,7 +47,7 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView }) {
     if (input.trim() === '') return;
 
     const newUserMessage: ChatMessage = {
-      id: String(Date.now()), // Use a more unique ID like Date.now() or a UUID
+      id: String(Date.now()), 
       text: input,
       sender: 'user',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -59,14 +57,15 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView }) {
     setIsLoading(true);
 
     let aiResponse: ChatMessage | null = null;
-    const aiMessageId = String(Date.now() + 1); // Ensure unique ID for AI response
+    const aiMessageId = String(Date.now() + 1); 
 
     try {
-      if (activeView === 'develop' && (input.toLowerCase().includes('code') || input.toLowerCase().includes('write') || input.toLowerCase().includes('function'))) {
+      // Prioritize code completion if the 'develop' panel is active and query suggests coding
+      if (activeView === 'develop' && (input.toLowerCase().includes('code') || input.toLowerCase().includes('write') || input.toLowerCase().includes('function') || input.toLowerCase().includes('implement'))) {
         const completionInput: AiCodeCompletionInput = {
-          codeSnippet: "/* Current editor content could be passed here if integrated */\nconsole.log('Hello');",
-          programmingLanguage: "javascript", 
-          cursorPosition: 0, 
+          codeSnippet: "/* Current editor content could be passed here if integrated */\nconsole.log('Hello');", // Placeholder
+          programmingLanguage: "javascript", // Placeholder
+          cursorPosition: 0, // Placeholder
         };
         const result = await aiCodeCompletion({ ...completionInput, codeSnippet: `// User wants: ${input}\n`});
         aiResponse = {
@@ -76,12 +75,12 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView }) {
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           codeCompletion: result.completedCode,
         };
-      } else {
+      } else { // Otherwise, default to tool suggestion
         const toolInput: SuggestToolInput = { prompt: input };
         const result = await suggestTool(toolInput);
         aiResponse = {
           id: aiMessageId,
-          text: `Based on your request, I have a suggestion.`,
+          text: `Based on your request, I have a suggestion for the '${result.toolSuggestion}' tool.`,
           sender: 'ai',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           toolSuggestion: result.toolSuggestion,

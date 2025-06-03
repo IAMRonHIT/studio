@@ -2,11 +2,13 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Briefcase, FileText, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Briefcase, FileText, Users, ArrowLeft, ArrowRight, RefreshCw, Search } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { generateImage, type GenerateImageInput } from '@/ai/flows/generate-image-flow';
-import { Skeleton } from '@/components/ui/skeleton'; // For loading state
+import { Skeleton } from '@/components/ui/skeleton'; 
 
 interface QuickAccessItem {
   name: string;
@@ -36,10 +38,11 @@ export function BrowserView() {
   
   const [isLoadingItems, setIsLoadingItems] = useState(initialQuickAccessItemsData.map(() => true));
   const [isLoadingFeatured, setIsLoadingFeatured] = useState(true);
+  const [url, setUrl] = useState('https://g.co/gemini/share/b0be5206eb8');
+
 
   useEffect(() => {
     const fetchImages = async () => {
-      // Fetch images for quick access items
       const updatedItemsPromises = initialQuickAccessItemsData.map(async (itemData, index) => {
         try {
           const input: GenerateImageInput = { prompt: itemData.prompt };
@@ -59,7 +62,6 @@ export function BrowserView() {
       const resolvedItems = await Promise.all(updatedItemsPromises);
       setQuickAccessItems(resolvedItems);
 
-      // Fetch image for featured resource
       try {
         const input: GenerateImageInput = { prompt: featuredResourceInitialData.prompt };
         const result = await generateImage(input);
@@ -76,8 +78,27 @@ export function BrowserView() {
   }, []);
 
   return (
-    <div className="h-full flex flex-col bg-zinc-100 dark:bg-neutral-800 p-4 md:p-6 overflow-auto">
-      <div className="flex-1 w-full">
+    <div className="h-full flex flex-col">
+      {/* Navigation and URL Bar */}
+      <div className="bg-muted/30 dark:bg-stone-800 p-2 text-foreground border-b border-border">
+        <div className="flex items-center space-x-2">
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground"><ArrowRight className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground"><RefreshCw className="h-4 w-4" /></Button>
+          <Input
+            type="text"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            className="flex-1 h-7 text-xs bg-background dark:bg-stone-700 border-input focus:border-primary focus:ring-primary"
+            placeholder="Enter URL"
+          />
+          <Button variant="default" size="sm" className="h-7 bg-primary hover:bg-primary/90 text-primary-foreground px-2.5">
+            <Search className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex-1 p-4 md:p-6 overflow-auto bg-zinc-100 dark:bg-neutral-800">
         <Card className="bg-gradient-to-br from-purple-500 via-purple-600 to-purple-700 text-white shadow-xl rounded-lg mb-8">
           <CardHeader>
             <CardTitle className="text-3xl font-bold">Welcome to Ron AI Tool Filing System</CardTitle>

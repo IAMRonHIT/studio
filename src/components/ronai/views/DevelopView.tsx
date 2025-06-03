@@ -1,8 +1,11 @@
 
-import React from 'react';
+"use client"; // Ensure this is at the top
+
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Folder, File, ChevronRight } from 'lucide-react';
+import { Folder, File, ChevronRight, PanelLeftClose, PanelRightClose, TerminalIcon, Play } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const mockFileStructure = [
   { name: 'src', type: 'folder', children: [
@@ -47,27 +50,44 @@ function Greeting({ name }) {
 export default Greeting;
 `;
 
-const FileTreeItem = ({ item, level = 0 }: { item: any, level?: number }) => {
-  const [isOpen, setIsOpen] = React.useState(false);
+interface FileTreeItemProps {
+  item: { name: string; type: 'folder' | 'file'; children?: FileTreeItemProps['item'][] };
+  level?: number;
+  onFileSelect: (fileName: string) => void;
+}
+
+const FileTreeItem = ({ item, level = 0, onFileSelect }: FileTreeItemProps) => {
+  const [isOpen, setIsOpen] = useState(item.type === 'folder' && level < 1); // Keep top-level folders open
   const Icon = item.type === 'folder' ? Folder : File;
   const hasChildren = item.children && item.children.length > 0;
+
+  const handleToggle = () => {
+    if (hasChildren) {
+      setIsOpen(!isOpen);
+    } else if (item.type === 'file') {
+      onFileSelect(item.name);
+    }
+  };
 
   return (
     <div>
       <div
         className="flex items-center space-x-2 p-1.5 hover:bg-secondary rounded-md cursor-pointer"
-        style={{ paddingLeft: `${level * 1 + 0.5}rem` }}
-        onClick={() => hasChildren && setIsOpen(!isOpen)}
+        style={{ paddingLeft: `${level * 0.8 + 0.5}rem` }}
+        onClick={handleToggle}
       >
-        {hasChildren && <ChevronRight className={`h-4 w-4 transform transition-transform ${isOpen ? 'rotate-90' : ''}`} />}
-        {!hasChildren && <div className="w-4 h-4" />} {/* Placeholder for alignment */}
-        <Icon className="h-4 w-4 text-primary" />
-        <span className="text-sm text-foreground">{item.name}</span>
+        {hasChildren ? (
+          <ChevronRight className={cn('h-4 w-4 transform transition-transform shrink-0', isOpen ? 'rotate-90' : '')} />
+        ) : (
+          <div className="w-4 h-4 shrink-0" /> // Placeholder for alignment
+        )}
+        <Icon className="h-4 w-4 text-primary shrink-0" />
+        <span className="text-sm text-foreground truncate">{item.name}</span>
       </div>
       {isOpen && hasChildren && (
         <div>
-          {item.children.map((child: any, index: number) => (
-            <FileTreeItem key={index} item={child} level={level + 1} />
+          {item.children.map((child, index) => (
+            <FileTreeItem key={index} item={child} level={level + 1} onFileSelect={onFileSelect} />
           ))}
         </div>
       )}
@@ -77,40 +97,65 @@ const FileTreeItem = ({ item, level = 0 }: { item: any, level?: number }) => {
 
 
 export function DevelopView() {
+  const [isExplorerOpen, setIsExplorerOpen] = useState(true);
+  const [selectedFile, setSelectedFile] = useState('App.tsx'); // Default selected file
+
+  const handleFileSelect = (fileName: string) => {
+    setSelectedFile(fileName);
+  };
+
   return (
-    <div className="h-full flex flex-col bg-background text-foreground p-1">
+    <div className="h-full flex flex-col bg-background text-foreground">
       <div className="flex-1 flex min-h-0">
         {/* File Explorer */}
-        <div className="w-1/4 min-w-[200px] bg-secondary/30 p-2 rounded-l-md overflow-y-auto">
-          <h3 className="text-sm font-semibold mb-2 px-1.5 text-muted-foreground">FILE EXPLORER</h3>
-          <ScrollArea className="h-full">
-            {mockFileStructure.map((item, index) => (
-              <FileTreeItem key={index} item={item} />
-            ))}
-          </ScrollArea>
+        <div
+          className={cn(
+            "bg-secondary/30 border-r border-border flex flex-col transition-all duration-300 ease-in-out",
+            isExplorerOpen ? "w-[250px] min-w-[200px]" : "w-0 overflow-hidden"
+          )}
+        >
+          {isExplorerOpen && (
+            <>
+              <div className="p-2 border-b border-border flex justify-between items-center sticky top-0 bg-secondary/30 z-10">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase">File Explorer</h3>
+              </div>
+              <ScrollArea className="flex-1 p-1.5">
+                {mockFileStructure.map((item, index) => (
+                  <FileTreeItem key={index} item={item} onFileSelect={handleFileSelect} />
+                ))}
+              </ScrollArea>
+            </>
+          )}
         </div>
 
         {/* Code Editor and Terminal */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Editor Controls */}
-          <div className="p-2 bg-secondary/30 border-b border-border flex justify-end">
-            <Button variant="outline" size="sm">Preview</Button>
+          <div className="p-2 bg-secondary/30 border-b border-border flex items-center space-x-2">
+            <Button variant="ghost" size="icon" onClick={() => setIsExplorerOpen(!isExplorerOpen)} className="h-7 w-7">
+              {isExplorerOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelRightClose className="h-4 w-4" />}
+            </Button>
+            <span className="text-sm font-medium text-foreground truncate flex-1">{selectedFile}</span>
+            <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs">
+              <Play className="h-3.5 w-3.5 mr-1.5" /> Preview
+            </Button>
           </div>
           {/* Code Editor */}
-          <ScrollArea className="flex-1 bg-background p-1">
-            <pre className="text-sm p-2 rounded-md bg-muted/20 overflow-x-auto">
-              <code className="font-mono whitespace-pre">{mockCode}</code>
+          <ScrollArea className="flex-1 bg-background p-0.5">
+            <pre className="text-sm p-3 rounded-md bg-muted/20 overflow-x-auto h-full">
+              <code className="font-mono whitespace-pre">{`// Displaying content for: ${selectedFile}\n${mockCode}`}</code>
             </pre>
           </ScrollArea>
 
           {/* Terminal */}
-          <div className="h-1/3 min-h-[150px] bg-secondary/50 p-2 rounded-b-r-md border-t border-border flex flex-col">
-             <div className="flex items-center gap-2 text-xs text-muted-foreground p-1 border-b border-border mb-1">
+          <div className="h-1/3 min-h-[150px] bg-secondary/50 border-t border-border flex flex-col">
+             <div className="flex items-center gap-2 text-xs text-muted-foreground p-1.5 border-b border-border">
+                <TerminalIcon className="h-3.5 w-3.5" />
                 <span>TERMINAL</span>
-                <span className="ml-auto">+</span>
+                <Button variant="ghost" size="icon" className="ml-auto h-5 w-5"><span className="text-base">+</span></Button>
              </div>
             <ScrollArea className="flex-1">
-              <div className="text-xs font-mono text-muted-foreground p-1">
+              <div className="text-xs font-mono text-muted-foreground p-2">
                 <p>$ npm install</p>
                 <p>...</p>
                 <p>$ npm start</p>
