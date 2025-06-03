@@ -12,7 +12,7 @@ import { suggestTool, type SuggestToolInput } from '@/ai/flows/ai-tool-selector'
 import { aiCodeCompletion, type AiCodeCompletionInput } from '@/ai/flows/ai-code-completion';
 
 const initialMessageBase: Omit<ChatMessage, 'timestamp'> & { timestamp: string | null } = {
-  id: '0',
+  id: String(Date.now()) + '-initial', // Ensure unique ID for initial message
   text: 'Hello! How can I help you with Ron AI tools today?',
   sender: 'ai',
   timestamp: null, 
@@ -27,7 +27,7 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
   useEffect(() => {
     setMessages((prevMessages) =>
       prevMessages.map((msg) =>
-        msg.id === '0' && msg.timestamp === null
+        msg.id === initialMessageBase.id && msg.timestamp === null
           ? { ...msg, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
           : msg
       )
@@ -47,7 +47,7 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
     if (input.trim() === '') return;
 
     const newUserMessage: ChatMessage = {
-      id: String(Date.now()), 
+      id: String(Date.now()) + '-user', 
       text: input,
       sender: 'user',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -57,7 +57,7 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
     setIsLoading(true);
 
     let aiResponse: ChatMessage | null = null;
-    const aiMessageId = String(Date.now() + 1); 
+    const aiMessageId = String(Date.now() + 1) + '-ai'; 
 
     try {
       // Prioritize code completion if the 'develop' panel is active and query suggests coding
@@ -129,7 +129,11 @@ export function AiChatPanel({ activeView }: { activeView: ActiveView | null }) {
             className="flex-1 bg-input focus:ring-primary"
             disabled={isLoading}
           />
-          <Button onClick={handleSendMessage} disabled={isLoading} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+          <Button 
+            onClick={handleSendMessage} 
+            disabled={isLoading} 
+            className="bg-gradient-to-b from-[hsl(250_70%_25%)] to-[hsl(var(--primary))] hover:from-[hsl(250_70%_25%)] hover:to-[hsl(var(--primary)/0.9)] text-primary-foreground"
+          >
             <Send className="h-4 w-4" />
           </Button>
         </div>
