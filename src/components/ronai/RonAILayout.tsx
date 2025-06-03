@@ -108,7 +108,7 @@ export function RonAILayout() {
           <div
             ref={slidablePanelRef}
             className={cn(
-              "h-full bg-background flex flex-col relative border-r border-border",
+              "h-full bg-background flex flex-col relative border-r border-border", // Ensures this panel is a flex column
               !isResizing && "transition-width duration-200 ease-in-out", 
               isPanelVisible ? "p-0" : "p-0 overflow-hidden" 
             )}
@@ -123,8 +123,8 @@ export function RonAILayout() {
                   </Button>
                 </div>
                 {/* This div is the direct parent for BrowserView, DevelopView, ToolsView */}
-                {/* It uses flex-1 to take remaining height and overflow-hidden to ensure children manage their own scroll */}
-                <div className="flex-1 flex flex-col min-h-0 overflow-hidden"> {/* MODIFIED: overflow-auto to overflow-hidden, added flex flex-col min-h-0 */}
+                {/* It uses flex-1 flex flex-col to take remaining height and enable its children (like DevelopView) to also use flex-1 */}
+                <div className="flex-1 flex flex-col min-h-0 overflow-hidden"> 
                   {activePanel === 'browser' && <BrowserView />}
                   {activePanel === 'develop' && <DevelopView />}
                   {activePanel === 'tools' && <ToolsView />}

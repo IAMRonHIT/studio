@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Folder, File, ChevronRight, PanelLeftClose, PanelRightClose, Eye, TerminalIcon, Code2Icon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIdeContext } from '@/contexts/IdeContext';
-import { PreviewPanel } from './PreviewPanel'; // Import the new component
+import { PreviewPanel } from './PreviewPanel';
 
 const mockFileStructure = [
   { name: 'src', type: 'folder', children: [
@@ -151,8 +151,19 @@ export function DevelopView() {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-background text-foreground min-h-0">
-      <div className="flex-1 flex min-h-0">
+    <div className="flex-1 flex flex-col bg-background text-foreground min-h-0"> {/* Root container for DevelopView, takes full height */}
+      {/* Header for file explorer toggle and current file name */}
+      <div className="p-2 bg-secondary/30 border-b border-border flex items-center space-x-2">
+        <Button variant="ghost" size="icon" onClick={() => setIsExplorerOpen(!isExplorerOpen)} className="h-7 w-7">
+          {isExplorerOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelRightClose className="h-4 w-4" />}
+        </Button>
+        <span className="text-sm font-medium text-foreground truncate flex-1">
+          {selectedFileName || (activeDevelopTab === 'editor' ? "Editor" : activeDevelopTab === 'preview' ? "Preview" : "Terminal" )}
+        </span>
+      </div>
+      
+      <div className="flex-1 flex min-h-0"> {/* Container for File Explorer and Tabs Area */}
+        {/* File Explorer */}
         <div
           className={cn(
             "bg-secondary/30 border-r border-border flex flex-col transition-all duration-300 ease-in-out",
@@ -173,17 +184,8 @@ export function DevelopView() {
           )}
         </div>
 
-        <div className="flex-1 flex flex-col min-w-0">
-          <div className="p-2 bg-secondary/30 border-b border-border flex items-center space-x-2">
-            <Button variant="ghost" size="icon" onClick={() => setIsExplorerOpen(!isExplorerOpen)} className="h-7 w-7">
-              {isExplorerOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelRightClose className="h-4 w-4" />}
-            </Button>
-            <span className="text-sm font-medium text-foreground truncate flex-1">
-              {selectedFileName || (activeDevelopTab === 'editor' ? "Editor" : activeDevelopTab === 'preview' ? "Preview" : "Terminal" )}
-            </span>
-          </div>
-          
-          <div className="flex-1 flex flex-col min-h-0">
+        {/* Tabs Area (Editor, Preview, Terminal) */}
+        <div className="flex-1 flex flex-col min-h-0"> {/* This div ensures Tabs component can take full height */}
             <Tabs value={activeDevelopTab} onValueChange={(value) => setActiveDevelopTab(value as 'editor'|'preview'|'terminal')} className="flex-1 flex flex-col min-h-0">
               <TabsList className="mx-2 mt-2 self-start">
                 <TabsTrigger value="editor" className="text-xs px-3 py-1 h-auto">
@@ -197,7 +199,10 @@ export function DevelopView() {
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="editor" className="flex-1 flex flex-col min-h-0 mt-0">
+              <TabsContent value="editor" className={cn(
+                "flex-1 flex flex-col min-h-0 mt-0",
+                activeDevelopTab !== 'editor' && 'hidden' // Explicitly hide if not active
+              )}>
                 <Textarea
                   value={animatedIdeCode}
                   onChange={handleEditorChange}
@@ -206,11 +211,17 @@ export function DevelopView() {
                 />
               </TabsContent>
 
-              <TabsContent value="preview" className="flex-1 flex flex-col min-h-0 mt-0">
+              <TabsContent value="preview" className={cn(
+                "flex-1 flex flex-col min-h-0 mt-0",
+                activeDevelopTab !== 'preview' && 'hidden' // Explicitly hide if not active
+              )}>
                 <PreviewPanel code={animatedIdeCode} />
               </TabsContent>
 
-              <TabsContent value="terminal" className="flex-1 flex flex-col min-h-0 mt-0">
+              <TabsContent value="terminal" className={cn(
+                "flex-1 flex flex-col min-h-0 mt-0",
+                activeDevelopTab !== 'terminal' && 'hidden' // Explicitly hide if not active
+              )}>
                 <ScrollArea className="flex-1 bg-secondary/50 rounded-md">
                   <div className="text-xs font-mono text-muted-foreground p-2">
                     <p>$ npm install</p>
@@ -226,7 +237,6 @@ export function DevelopView() {
               </TabsContent>
             </Tabs>
           </div>
-        </div>
       </div>
     </div>
   );
