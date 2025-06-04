@@ -46,6 +46,8 @@ Your goal is to conduct in-depth research on the following query.
 **To ensure your information is current and comprehensive, you MUST use the "performWebSearch" tool to find relevant articles, studies, and guidelines from the internet.**
 Synthesize the information from your internal knowledge AND the results from the "performWebSearch" tool.
 
+If the "performWebSearch" tool returns an error message (e.g., indicating it's not configured or failed), clearly state this limitation in your summary and attempt to answer based on your internal knowledge if possible, noting that web search was unavailable.
+
 Provide a comprehensive summary, detail the key findings, and list credible sources with their URLs as found through your searches using the "performWebSearch" tool.
 Prioritize citing sources and URLs obtained from the "performWebSearch" tool.
 Focus on accuracy, depth, and clarity. Ensure your output strictly adheres to the defined schema.
