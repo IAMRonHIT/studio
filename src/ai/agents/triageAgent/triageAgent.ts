@@ -9,6 +9,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { codeCompletionAgentPrompt, type AiCodeCompletionOutput } from '@/ai/agents/codeCompletionAgent';
 import type { ActiveView } from '@/types';
+import { googleAI } from '@genkit-ai/googleai'; // Import googleAI for model reference
 
 import { fdaTools } from '@/ai/tools/fda-drug-label-tools';
 import { searchNPIRegistryTool } from '@/ai/tools/npi-registry-tool';
@@ -678,8 +679,7 @@ export async function runTriageAgent(input: TriageAgentInput): Promise<TriageAge
 const triageAgentPrompt = ai.definePrompt(
   {
     name: 'triageAgentPrompt',
-    // The model will be picked up from the default Genkit configuration (src/ai/genkit.ts)
-    // model: 'openai/ft:gpt-4.1-mini-2025-04-14:ron-health-information-technologies-inc:ron-ai:BZIF9O11',
+    model: googleAI.model('gemini-1.5-flash-latest'), // Specify a fallback model
     input: { schema: TriageAgentInputSchema },
     output: { schema: TriageAgentOutputSchema },
     tools: [

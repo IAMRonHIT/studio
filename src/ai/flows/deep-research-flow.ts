@@ -10,8 +10,9 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-import { performWebSearchTool } from '../tools/web-search-tool';
+import {z}from 'genkit';
+import { performWebSearchTool } from '../tools/performWebSearchTool'; // Corrected import
+import { googleAI } from '@genkit-ai/googleai'; // Import googleAI for model reference
 
 const DeepResearchInputSchema = z.object({
   query: z.string().describe('The research topic or question.'),
@@ -36,9 +37,10 @@ export async function performDeepResearch(input: DeepResearchInput): Promise<Dee
 
 const prompt = ai.definePrompt({
   name: 'deepResearchPrompt',
+  model: googleAI.model('gemini-1.5-flash-latest'), // Specify a fallback model
   input: {schema: DeepResearchInputSchema},
   output: {schema: DeepResearchOutputSchema},
-  tools: [performWebSearchTool], // Use the specific web search tool
+  tools: [performWebSearchTool], 
   prompt: `You are a highly sophisticated AI research assistant specializing in healthcare topics.
 Your goal is to conduct in-depth research on the following query.
 

@@ -34,8 +34,8 @@ export const performWebSearchTool = ai.defineTool(
   },
   async ({query}): Promise<WebSearchOutput> => {
     const apiKey = process.env.SPECIFIC_SEARCH_API_KEY;
-    const apiEndpoint = process.env.SPECIFIC_SEARCH_API_ENDPOINT; // Example: https://www.googleapis.com/customsearch/v1
-    const cx = process.env.GOOGLE_CUSTOM_SEARCH_CX; // Example: Your Google Programmable Search Engine ID
+    const apiEndpoint = process.env.SPECIFIC_SEARCH_API_ENDPOINT; 
+    const cx = process.env.GOOGLE_CUSTOM_SEARCH_CX; 
 
     if (!apiKey) {
       return { results: [], error: 'Search API key (SPECIFIC_SEARCH_API_KEY) is not configured in .env. Cannot perform live web search.' };
@@ -44,20 +44,16 @@ export const performWebSearchTool = ai.defineTool(
       return { results: [], error: 'Search API endpoint (SPECIFIC_SEARCH_API_ENDPOINT) is not configured in .env.' };
     }
     // For Google Custom Search, 'cx' is also required.
-    // Add checks for other required params based on your chosen API.
 
 
     try {
-      // Construct the search URL. This is an EXAMPLE for Google Custom Search API.
-      // You WILL NEED TO ADJUST this based on your chosen search API's documentation.
       const searchParams = new URLSearchParams({
         q: query,
         key: apiKey,
       });
-      if (cx) { // If using Google Custom Search, cx is typically required
+      if (cx) { 
         searchParams.append('cx', cx);
       }
-      // Add other parameters like 'num' for number of results, 'start' for pagination, etc.
       // searchParams.append('num', '5'); 
 
       const response = await fetch(`${apiEndpoint}?${searchParams.toString()}`);
@@ -70,18 +66,14 @@ export const performWebSearchTool = ai.defineTool(
 
       const data = await response.json();
 
-      // Map the API's response fields to WebSearchResultItemSchema.
-      // This mapping is HIGHLY DEPENDENT on the structure of your chosen search API's response.
-      // The example below assumes a structure similar to Google Custom Search API (data.items).
       let mappedResults: { title: string; link: string; snippet?: string }[] = [];
       if (data.items && Array.isArray(data.items)) {
         mappedResults = data.items.map((item: any) => ({
           title: item.title || 'No title',
           link: item.link || '#',
           snippet: item.snippet || 'No snippet available.',
-        })).slice(0, 5); // Limit to top 5 results for example
+        })).slice(0, 5); 
       } else {
-        // Handle cases where 'items' is not present or not an array, or if the API has a different structure
         console.warn("Search API response format unexpected or no items found. Data:", data);
         return { results: [], error: "Search API returned no results or an unexpected format."}
       }
