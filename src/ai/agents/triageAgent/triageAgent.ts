@@ -9,11 +9,12 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { codeCompletionAgentPrompt, type AiCodeCompletionOutput } from '@/ai/agents/codeCompletionAgent';
 import type { ActiveView } from '@/types';
-// import { googleAI } from '@genkit-ai/googleai'; // No longer needed if using string model IDs
 
 import { fdaTools } from '@/ai/tools/fda-drug-label-tools';
 import { searchNPIRegistryTool } from '@/ai/tools/npi-registry-tool';
 import { eUtilitiesApplicationsTool } from '@/ai/tools/e-utilities-tool';
+import { performWebSearchTool } from '@/ai/tools/performWebSearchTool';
+
 
 // GFR Calculator HTML - kept here for the triage agent to use for the demo
 const GFR_CALCULATOR_HTML = `
@@ -679,7 +680,7 @@ export async function runTriageAgent(input: TriageAgentInput): Promise<TriageAge
 const triageAgentPrompt = ai.definePrompt(
   {
     name: 'triageAgentPrompt',
-    model: 'googleai/gemini-1.5-flash-latest', // Using string identifier
+    model: 'googleai/gemini-1.5-flash-latest', // Fallback model
     input: { schema: TriageAgentInputSchema },
     output: { schema: TriageAgentOutputSchema },
     tools: [
@@ -687,6 +688,7 @@ const triageAgentPrompt = ai.definePrompt(
       ...fdaTools, // Spread all defined FDA tools
       searchNPIRegistryTool,
       eUtilitiesApplicationsTool,
+      performWebSearchTool, // Added for deep research flow if needed by Ron AI.
       // Add other specialist agents or tools here
     ],
     system: `You are Ron of Ron AI, a sophisticated care coordination model designed to assist in managing and coordinating patient care effectively. Your role includes tasks such as scheduling appointments, tracking patient progress, communicating with healthcare providers, and managing patient records. Leverage your advanced tools and capabilities to perform these tasks efficiently:
