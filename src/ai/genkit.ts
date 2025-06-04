@@ -1,7 +1,7 @@
 
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
-// import {openAI} from '@genkit-ai/openai'; // Import the OpenAI plugin - Commented out due to install issues
+// import {openAI} from '@genkit-ai/openai'; // Import the OpenAI plugin
 
 // Ensure your OPENAI_API_KEY is set in your .env file
 // Example: OPENAI_API_KEY=your_openai_api_key_here
@@ -9,11 +9,12 @@ import {googleAI} from '@genkit-ai/googleai';
 export const ai = genkit({
   plugins: [
     googleAI(), // Keep Google AI for existing Gemini models (e.g., image generation)
-    // openAI({ // Commented out due to install issues
+    // openAI({ 
     //   apiKey: process.env.OPENAI_API_KEY,
     // }), 
   ],
-  // Set the fine-tuned model as the default for generation. - Commented out as OpenAI plugin is disabled
-  // Prompts/flows can still specify other models if needed.
+  // We are not setting a global default OpenAI model here because the plugin is commented out.
+  // If a prompt/flow does not specify a model, Genkit might try to find another default or error out.
+  // Prompts/flows intended to use OpenAI will fail until the OpenAI plugin can be installed and configured.
   // model: 'openai/ft:gpt-4.1-mini-2025-04-14:ron-health-information-technologies-inc:ron-ai:BZIF9O11',
 });
