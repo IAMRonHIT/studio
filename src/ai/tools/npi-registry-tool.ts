@@ -1,4 +1,4 @@
-'use server';
+
 /**
  * @fileOverview Genkit tool for interacting with an NPI Registry API.
  * This is a stub and requires actual API integration.

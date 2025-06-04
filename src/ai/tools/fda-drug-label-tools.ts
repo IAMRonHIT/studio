@@ -1,4 +1,4 @@
-'use server';
+
 /**
  * @fileOverview Genkit tools for interacting with an FDA Drug Label API.
  * These are stubs and require actual API integration.

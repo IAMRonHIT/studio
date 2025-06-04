@@ -1,4 +1,4 @@
-'use server';
+
 /**
  * @fileOverview Genkit tool for interacting with E-utilities applications.
  * This is a stub and requires actual API integration.

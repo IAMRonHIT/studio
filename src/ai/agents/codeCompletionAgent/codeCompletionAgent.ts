@@ -1,11 +1,11 @@
-'use server';
+
 /**
  * @fileOverview Defines the Code Completion Agent.
  * This agent specializes in generating code snippets.
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z}from 'genkit';
 
 const AiCodeCompletionInputSchema = z.object({
   codeSnippet: z.string().describe('The current code snippet in the editor, or a description of the code needed.'),

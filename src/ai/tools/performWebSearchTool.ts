@@ -1,5 +1,4 @@
 
-'use server';
 /**
  * @fileOverview A Genkit tool for performing web searches via a specified API.
  * This tool requires an API key and potentially an endpoint to be configured
@@ -7,7 +6,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'zod';
+import {z}from 'zod';
 
 const WebSearchInputSchema = z.object({
   query: z.string().describe('The search query for the web.'),
