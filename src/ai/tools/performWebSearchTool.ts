@@ -1,0 +1,101 @@
+
+'use server';
+/**
+ * @fileOverview A Genkit tool for performing web searches via a specified API.
+ * This tool requires an API key and potentially an endpoint to be configured
+ * in the .env file.
+ */
+
+import {ai} from '@/ai/genkit';
+import {z} from 'zod';
+
+const WebSearchInputSchema = z.object({
+  query: z.string().describe('The search query for the web.'),
+});
+
+const WebSearchResultItemSchema = z.object({
+  title: z.string().describe('The title of the search result.'),
+  link: z.string().describe('The URL of the search result.'),
+  snippet: z.string().optional().describe('A brief snippet of the search result content.'),
+});
+
+const WebSearchOutputSchema = z.object({
+  results: z.array(WebSearchResultItemSchema).describe('A list of search results.'),
+  error: z.string().optional().describe('Any error message if the search failed or if the tool is not fully configured.'),
+});
+export type WebSearchOutput = z.infer<typeof WebSearchOutputSchema>;
+
+
+export const performWebSearchTool = ai.defineTool(
+  {
+    name: 'performWebSearch',
+    description: 'Performs a web search using a configured third-party API to find current information. Requires SPECIFIC_SEARCH_API_KEY in .env. Provide API details if not working.',
+    inputSchema: WebSearchInputSchema,
+    outputSchema: WebSearchOutputSchema,
+  },
+  async ({query}): Promise<WebSearchOutput> => {
+    const apiKey = process.env.SPECIFIC_SEARCH_API_KEY;
+    const apiEndpoint = process.env.SPECIFIC_SEARCH_API_ENDPOINT; // Example: https://www.googleapis.com/customsearch/v1
+    const cx = process.env.GOOGLE_CUSTOM_SEARCH_CX; // Example: Your Google Programmable Search Engine ID
+
+    if (!apiKey) {
+      return { results: [], error: 'Search API key (SPECIFIC_SEARCH_API_KEY) is not configured in .env. Cannot perform live web search.' };
+    }
+    if (!apiEndpoint) {
+      return { results: [], error: 'Search API endpoint (SPECIFIC_SEARCH_API_ENDPOINT) is not configured in .env.' };
+    }
+    // For Google Custom Search, 'cx' is also required.
+    // Add checks for other required params based on your chosen API.
+
+
+    try {
+      // Construct the search URL. This is an EXAMPLE for Google Custom Search API.
+      // You WILL NEED TO ADJUST this based on your chosen search API's documentation.
+      const searchParams = new URLSearchParams({
+        q: query,
+        key: apiKey,
+      });
+      if (cx) { // If using Google Custom Search, cx is typically required
+        searchParams.append('cx', cx);
+      }
+      // Add other parameters like 'num' for number of results, 'start' for pagination, etc.
+      // searchParams.append('num', '5'); 
+
+      const response = await fetch(`${apiEndpoint}?${searchParams.toString()}`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Search API request failed: ${response.status} ${response.statusText}. Details: ${errorText}`);
+        return { results: [], error: `Search API request failed: ${response.status} ${response.statusText}.` };
+      }
+
+      const data = await response.json();
+
+      // Map the API's response fields to WebSearchResultItemSchema.
+      // This mapping is HIGHLY DEPENDENT on the structure of your chosen search API's response.
+      // The example below assumes a structure similar to Google Custom Search API (data.items).
+      let mappedResults: { title: string; link: string; snippet?: string }[] = [];
+      if (data.items && Array.isArray(data.items)) {
+        mappedResults = data.items.map((item: any) => ({
+          title: item.title || 'No title',
+          link: item.link || '#',
+          snippet: item.snippet || 'No snippet available.',
+        })).slice(0, 5); // Limit to top 5 results for example
+      } else {
+        // Handle cases where 'items' is not present or not an array, or if the API has a different structure
+        console.warn("Search API response format unexpected or no items found. Data:", data);
+        return { results: [], error: "Search API returned no results or an unexpected format."}
+      }
+      
+      if (mappedResults.length === 0) {
+        return { results: [], error: `No search results found for query: "${query}"` };
+      }
+
+      return { results: mappedResults };
+
+    } catch (e: any) {
+      console.error("Web search tool error:", e);
+      return { results: [], error: `An error occurred while performing the web search: ${e.message}` };
+    }
+  }
+);
