@@ -9,9 +9,9 @@ import {googleAI} from '@genkit-ai/googleai';
 export const ai = genkit({
   plugins: [
     googleAI(), // Keep Google AI for existing Gemini models (e.g., image generation)
-    // openAI({ 
+    // openAI({
     //   apiKey: process.env.OPENAI_API_KEY,
-    // }), 
+    // }),
   ],
   // We are not setting a global default OpenAI model here because the plugin is commented out.
   // If a prompt/flow does not specify a model, Genkit might try to find another default or error out.
