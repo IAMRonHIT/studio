@@ -36,7 +36,7 @@ export async function performDeepResearch(input: DeepResearchInput): Promise<Dee
 
 const prompt = ai.definePrompt({
   name: 'deepResearchPrompt',
-  model: 'googleai/gemini-1.5-flash-latest', // Fallback model
+  model: 'googleai/gemini-2.5-pro-preview-05-06', // Updated model as per user request
   input: {schema: DeepResearchInputSchema},
   output: {schema: DeepResearchOutputSchema},
   tools: [performWebSearchTool], 
