@@ -6,8 +6,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z}from 'genkit';
-import { googleAI } from '@genkit-ai/googleai'; // Import googleAI for model reference
-
+// import { googleAI } from '@genkit-ai/googleai'; // No longer needed if using string model ID
 
 const AiCodeCompletionInputSchema = z.object({
   codeSnippet: z.string().describe('The current code snippet in the editor, or a description of the code needed.'),
@@ -27,7 +26,7 @@ export type AiCodeCompletionOutput = z.infer<typeof AiCodeCompletionOutputSchema
 export const codeCompletionAgentPrompt = ai.definePrompt({
   name: 'codeCompletionAgentPrompt',
   description: 'Generates or completes code snippets based on user requests. Use this for tasks like writing functions, components, or explaining code.',
-  model: googleAI.model('gemini-1.5-flash-latest'), // Specify a fallback model
+  model: 'googleai/gemini-1.5-flash-latest', // Using string identifier
   input: {schema: AiCodeCompletionInputSchema},
   output: {schema: AiCodeCompletionOutputSchema},
   prompt: `You are an AI code completion assistant.
@@ -53,3 +52,5 @@ export async function runCodeCompletionAgent(input: AiCodeCompletionInput): Prom
   }
   return output;
 }
+
+      

@@ -11,8 +11,8 @@
 
 import {ai} from '@/ai/genkit';
 import {z}from 'genkit';
-import { performWebSearchTool } from '../tools/performWebSearchTool'; // Corrected import
-import { googleAI } from '@genkit-ai/googleai'; // Import googleAI for model reference
+import { performWebSearchTool } from '@/ai/tools/performWebSearchTool';
+// import { googleAI } from '@genkit-ai/googleai'; // No longer needed if using string model IDs
 
 const DeepResearchInputSchema = z.object({
   query: z.string().describe('The research topic or question.'),
@@ -37,7 +37,7 @@ export async function performDeepResearch(input: DeepResearchInput): Promise<Dee
 
 const prompt = ai.definePrompt({
   name: 'deepResearchPrompt',
-  model: googleAI.model('gemini-1.5-flash-latest'), // Specify a fallback model
+  model: 'googleai/gemini-1.5-flash-latest', // Using string identifier
   input: {schema: DeepResearchInputSchema},
   output: {schema: DeepResearchOutputSchema},
   tools: [performWebSearchTool], 
@@ -69,3 +69,5 @@ const deepResearchFlow = ai.defineFlow(
     return output;
   }
 );
+
+      

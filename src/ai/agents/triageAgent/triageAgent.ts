@@ -6,10 +6,10 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 import { codeCompletionAgentPrompt, type AiCodeCompletionOutput } from '@/ai/agents/codeCompletionAgent';
 import type { ActiveView } from '@/types';
-import { googleAI } from '@genkit-ai/googleai'; // Import googleAI for model reference
+// import { googleAI } from '@genkit-ai/googleai'; // No longer needed if using string model IDs
 
 import { fdaTools } from '@/ai/tools/fda-drug-label-tools';
 import { searchNPIRegistryTool } from '@/ai/tools/npi-registry-tool';
@@ -679,7 +679,7 @@ export async function runTriageAgent(input: TriageAgentInput): Promise<TriageAge
 const triageAgentPrompt = ai.definePrompt(
   {
     name: 'triageAgentPrompt',
-    model: googleAI.model('gemini-1.5-flash-latest'), // Specify a fallback model
+    model: 'googleai/gemini-1.5-flash-latest', // Using string identifier
     input: { schema: TriageAgentInputSchema },
     output: { schema: TriageAgentOutputSchema },
     tools: [
@@ -1742,3 +1742,5 @@ If providing code via the codeCompletionAgentPrompt, ensure the accompanying tex
     }
   },
 );
+
+      
