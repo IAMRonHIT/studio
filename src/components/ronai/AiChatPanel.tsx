@@ -112,10 +112,10 @@ export function AiChatPanel({ activeView, onToolPreviewRequest }: AiChatPanelPro
           
           let formattedResearchText = `**Research Summary for "${currentInput}"**\n\n**Summary:**\n${researchResult.summary}\n\n`;
           if (researchResult.keyPoints && researchResult.keyPoints.length > 0) {
-            formattedResearchText += `**Key Points:**\n${researchResult.keyPoints.map(p => `- ${p}`).join('\n')}\n\n`;
+            formattedResearchText += `**Key Points:**\n${researchResult.keyPoints.map((p: string) => `- ${p}`).join('\n')}\n\n`;
           }
           if (researchResult.sources && researchResult.sources.length > 0) {
-            formattedResearchText += `**Potential Sources (AI Generated - Verify Accuracy):**\n${researchResult.sources.map(s => `- ${s.title}${s.url ? ` (${s.url})` : ''}`).join('\n')}`;
+            formattedResearchText += `**Potential Sources (AI Generated - Verify Accuracy):**\n${researchResult.sources.map((s: { title: string; url?: string }) => `- ${s.title}${s.url ? ` (${s.url})` : ''}`).join('\n')}`;
           } else {
             formattedResearchText += "**Sources:**\nNo specific sources were cited by the AI for this research.";
           }

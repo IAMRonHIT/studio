@@ -9,6 +9,7 @@
     pkgs.zulu
     pkgs.python3Full
     pkgs.python312Packages.pip
+    pkgs.python312Packages.langchain
   ];
   # Sets environment variables in the workspace
   env = {};
