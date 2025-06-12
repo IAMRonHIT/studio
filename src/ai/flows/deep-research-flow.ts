@@ -10,25 +10,16 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z}from 'genkit';
-import { performWebSearchTool } from '@/ai/tools/performWebSearchTool';
-
-const DeepResearchInputSchema = z.object({
-  query: z.string().describe('The research topic or question.'),
-});
-export type DeepResearchInput = z.infer<typeof DeepResearchInputSchema>;
-
-const DeepResearchOutputSchema = z.object({
-  summary: z.string().describe('A comprehensive summary of the research findings, integrating information from internal knowledge and web searches.'),
-  keyPoints: z.array(z.string()).describe('A list of key points or takeaways from the research.'),
-  sources: z.array(
-    z.object({
-      title: z.string().describe('The title of the source material.'),
-      url: z.string().optional().describe('The URL of the source, if available. Prioritize sources found via the performWebSearch tool.')
-    })
-  ).optional().describe('A list of sources used for the research, including those identified by the AI or found through web searches via the performWebSearch tool.')
-});
-export type DeepResearchOutput = z.infer<typeof DeepResearchOutputSchema>;
+import { braveWebSearch } from '@/ai/tools/performWebSearchTool';
+import {
+  DeepResearchInputSchema,
+  DeepResearchOutputSchema,
+  type DeepResearchInput,
+  type DeepResearchOutput,
+} from './deep-research-schemas';
+import { braveSummarize } from '@/ai/tools/braveSummarizeTool';
+import { fdaTools } from '@/ai/tools/fda-drug-label-tools';
+import { eUtilitiesApplicationsTool } from '@/ai/tools/e-utilities-tool';
 
 export async function performDeepResearch(input: DeepResearchInput): Promise<DeepResearchOutput> {
   return deepResearchFlow(input);
@@ -39,17 +30,24 @@ const prompt = ai.definePrompt({
   model: 'googleai/gemini-2.5-pro-preview-05-06',
   input: {schema: DeepResearchInputSchema},
   output: {schema: DeepResearchOutputSchema},
-  tools: [performWebSearchTool],
+  config: { maxOutputTokens: 60000 },
+  tools: [braveWebSearch, braveSummarize, ...fdaTools, eUtilitiesApplicationsTool],
   prompt: `You are a highly sophisticated AI research assistant specializing in healthcare topics.
 Your goal is to conduct in-depth research on the following query.
 
-**To ensure your information is current and comprehensive, you MUST use the "performWebSearch" tool to find relevant articles, studies, and guidelines from the internet.**
-Synthesize the information from your internal knowledge AND the results from the "performWebSearch" tool.
+**To ensure your information is current and comprehensive, you MUST first use the "braveWebSearch" tool to find relevant articles, studies, and guidelines from the internet.**
+The "braveWebSearch" tool may return a "summarizer_key".
+**If a "summarizer_key" is returned, you MUST then use the "braveSummarize" tool with this key to obtain a summary of the search results.**
 
-If the "performWebSearch" tool returns an error message (e.g., indicating it's not configured or failed), clearly state this limitation in your summary and attempt to answer based on your internal knowledge if possible, noting that web search was unavailable.
+Synthesize the information from your internal knowledge, the results from the "braveWebSearch" tool, AND the summary from the "braveSummarize" tool (if available).
 
-Provide a comprehensive summary, detail the key findings, and list credible sources with their URLs as found through your searches using the "performWebSearch" tool.
-Prioritize citing sources and URLs obtained from the "performWebSearch" tool.
+If the "braveWebSearch" tool returns an error message (e.g., indicating it's not configured or failed), clearly state this limitation in your summary and attempt to answer based on your internal knowledge if possible, noting that web search was unavailable.
+If the "braveSummarize" tool returns an error or no summary, proceed with the information from "braveWebSearch" and your internal knowledge, noting that a summary could not be obtained.
+
+Provide a comprehensive summary, detail the key findings, and list credible sources with their URLs as found through your searches using the "braveWebSearch" tool and mentioned in the summary from "braveSummarize".
+Prioritize citing sources and URLs obtained from these tools.
+Consider using the FDA drug label tools (e.g., 'searchDrugLabel', 'getDrugInteractions', 'getAdverseReactions') if the query involves specific medications.
+Consider using the 'e_utilities_applications' tool (for PubMed searches, etc.) if the query requires information from biomedical literature databases.
 Focus on accuracy, depth, and clarity. Ensure your output strictly adheres to the defined schema.
 
 Query: {{{query}}}
@@ -70,5 +68,15 @@ const deepResearchFlow = ai.defineFlow(
     return output;
   }
 );
-
-      
+    name: 'deepResearchFlow',
+    inputSchema: DeepResearchInputSchema,
+    outputSchema: DeepResearchOutputSchema,
+  },
+  async (input: DeepResearchInput) => {
+    const {output} = await prompt(input);
+    if (!output) {
+      throw new Error("The AI failed to provide research output.");
+    }
+    return output;
+  }
+);

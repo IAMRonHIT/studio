@@ -1,80 +1,77 @@
 
 /**
- * @fileOverview A Genkit tool for performing web searches via a specified API.
- * This tool requires an API key and potentially an endpoint to be configured
- * in the .env file.
+ * @fileOverview A Genkit tool for performing web searches via the Brave Search API.
+ * This tool requires an API key to be configured in the .env file.
  *
  * Required .env variables:
- * - SPECIFIC_SEARCH_API_KEY: Your API key for the search service.
- * - SPECIFIC_SEARCH_API_ENDPOINT: The endpoint URL for the search service.
- * - GOOGLE_CUSTOM_SEARCH_CX: (Optional) Your Google Custom Search Engine ID, if using Google CSE.
+ * - BRAVE_SEARCH_API_KEY: Your API key for the Brave Search service.
  */
 
 import {ai} from '@/ai/genkit';
 import {z}from 'zod';
 
-const WebSearchInputSchema = z.object({
+const BraveWebSearchInputSchema = z.object({
   query: z.string().describe('The search query for the web.'),
+  goggle: z.string().optional().describe('The Goggle definition to use for filtering search results.'),
+  goggle_id: z.string().optional().describe('The Goggle ID to use for filtering search results.'),
 });
 
-const WebSearchResultItemSchema = z.object({
+const BraveWebSearchResultItemSchema = z.object({
   title: z.string().describe('The title of the search result.'),
   link: z.string().describe('The URL of the search result.'),
   snippet: z.string().optional().describe('A brief snippet of the search result content.'),
 });
 
-const WebSearchOutputSchema = z.object({
-  results: z.array(WebSearchResultItemSchema).describe('A list of search results.'),
+const BraveWebSearchOutputSchema = z.object({
+  results: z.array(BraveWebSearchResultItemSchema).describe('A list of search results.'),
+  summarizer_key: z.string().optional().describe('The key to use for the summarizer API.'),
   error: z.string().optional().describe('Any error message if the search failed or if the tool is not fully configured.'),
 });
-export type WebSearchOutput = z.infer<typeof WebSearchOutputSchema>;
+export type WebSearchOutput = z.infer<typeof BraveWebSearchOutputSchema>;
 
 
-export const performWebSearchTool = ai.defineTool(
+export const braveWebSearch = ai.defineTool(
   {
-    name: 'performWebSearch',
-    description: 'Performs a web search using a configured third-party API. CRITICAL: Requires SPECIFIC_SEARCH_API_KEY and SPECIFIC_SEARCH_API_ENDPOINT to be set in the .env file. If using Google Custom Search, GOOGLE_CUSTOM_SEARCH_CX is also required in .env. If these are not set, the tool will return an error.',
-    inputSchema: WebSearchInputSchema,
-    outputSchema: WebSearchOutputSchema,
+    name: 'braveWebSearch',
+    description: 'Performs a web search using the Brave Search API, filtered by the ron-ai.goggle, and returns a summarizer key.',
+    inputSchema: BraveWebSearchInputSchema,
+    outputSchema: BraveWebSearchOutputSchema,
   },
-  async ({query}): Promise<WebSearchOutput> => {
-    const apiKey = process.env.SPECIFIC_SEARCH_API_KEY;
-    const apiEndpoint = process.env.SPECIFIC_SEARCH_API_ENDPOINT;
-    const cx = process.env.GOOGLE_CUSTOM_SEARCH_CX;
-
-    if (!apiKey) {
-      return { results: [], error: 'Search API key (SPECIFIC_SEARCH_API_KEY) is not configured in .env. Cannot perform live web search.' };
-    }
-    if (!apiEndpoint) {
-      return { results: [], error: 'Search API endpoint (SPECIFIC_SEARCH_API_ENDPOINT) is not configured in .env.' };
-    }
-    // For Google Custom Search, 'cx' is also required, but the tool can attempt to run without it if not using Google CSE.
-    // The API itself will likely fail if cx is needed but not provided for Google CSE.
-
+  async ({query, goggle, goggle_id}): Promise<WebSearchOutput> => {
+    const apiKey = process.env.BRAVE_SEARCH_API_KEY;
 
     try {
       const searchParams = new URLSearchParams({
         q: query,
-        key: apiKey,
+        freshness: 'year',
+        units: 'imperial',
+        goggles_id: 'https://gist.githubusercontent.com/RonsDad/669383264435c45be4a76da5158a5d05/raw',
+        goggles: 'https://gist.githubusercontent.com/RonsDad/669383264435c45be4a76da5158a5d05/raw',
+        extra_snippets: 'true',
+        summary: 'true'
       });
-      if (cx) {
-        searchParams.append('cx', cx);
-      }
-      // searchParams.append('num', '5');
 
-      const response = await fetch(`${apiEndpoint}?${searchParams.toString()}`);
+      const response = await fetch(`https://api.search.brave.com/res/v1/web/search?${searchParams.toString()}`, {
+        method: 'get',
+        headers: {
+          'Accept': 'application/json',
+          'Accept-Encoding': 'gzip',
+          'x-subscription-token': apiKey ?? '',
+          'Api-Version': '2023-10-11',
+        },
+      });
 
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`Search API request failed: ${response.status} ${response.statusText}. Details: ${errorText}`);
-        return { results: [], error: `Search API request failed: ${response.status} ${response.statusText}. Ensure API key, endpoint, and CX (if applicable) are correct.` };
+        return { results: [], error: `Search API request failed: ${response.status} ${response.statusText}. Ensure API key and endpoint are correct.` };
       }
 
       const data = await response.json();
 
       let mappedResults: { title: string; link: string; snippet?: string }[] = [];
       if (data.items && Array.isArray(data.items)) {
-        mappedResults = data.items.map((item: any) => ({
+        mappedResults = data.items.map((item: any): { title: string; link: string; snippet?: string } => ({
           title: item.title || 'No title',
           link: item.link || '#',
           snippet: item.snippet || 'No snippet available.',
@@ -88,7 +85,9 @@ export const performWebSearchTool = ai.defineTool(
         return { results: [], error: `No search results found for query: "${query}"` };
       }
 
-      return { results: mappedResults };
+      const summarizer_key = data.summarizer?.key;
+
+      return { results: mappedResults, summarizer_key };
 
     } catch (e: any) {
       console.error("Web search tool error:", e);
@@ -96,4 +95,3 @@ export const performWebSearchTool = ai.defineTool(
     }
   }
 );
-

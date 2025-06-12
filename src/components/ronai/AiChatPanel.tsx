@@ -12,7 +12,8 @@ import { Label } from '@/components/ui/label';
 import { ChatMessageItem } from './ChatMessageItem';
 
 import { runTriageAgent, type TriageAgentInput, type TriageAgentOutput } from '@/ai/agents/triageAgent';
-import { performDeepResearch, type DeepResearchInput } from '@/ai/flows/deep-research-flow'; // Keep for now
+// import { performDeepResearch, type DeepResearchInput } from '@/ai/flows/deep-research-flow'; // Keep for now
+import { runDeepResearchAgent, type DeepResearchInput } from '@/ai/agents/deepResearchAgent'; // Use the new agent
 import { useIdeContext } from '@/contexts/IdeContext';
 
 const initialMessageBase: Omit<ChatMessage, 'timestamp'> & { timestamp: string | null } = {
@@ -107,7 +108,7 @@ export function AiChatPanel({ activeView, onToolPreviewRequest }: AiChatPanelPro
       try {
         if (deepResearchEnabled) {
           const researchInput: DeepResearchInput = { query: currentInput };
-          const researchResult = await performDeepResearch(researchInput);
+          const researchResult = await runDeepResearchAgent(researchInput); // Call the new agent runner
           
           let formattedResearchText = `**Research Summary for "${currentInput}"**\n\n**Summary:**\n${researchResult.summary}\n\n`;
           if (researchResult.keyPoints && researchResult.keyPoints.length > 0) {

@@ -13,7 +13,7 @@ import type { ActiveView } from '@/types';
 import { fdaTools } from '@/ai/tools/fda-drug-label-tools';
 import { searchNPIRegistryTool } from '@/ai/tools/npi-registry-tool';
 import { eUtilitiesApplicationsTool } from '@/ai/tools/e-utilities-tool';
-import { performWebSearchTool } from '@/ai/tools/performWebSearchTool';
+import { braveWebSearch } from '@/ai/tools/performWebSearchTool';
 
 
 // GFR Calculator HTML - kept here for the triage agent to use for the demo
@@ -641,9 +641,9 @@ const TriageAgentOutputSchema = z.object({
   inputRequirements: z.string().optional().describe("For tool suggestions, what inputs are needed."),
   outputData: z.string().optional().describe("For tool suggestions, what outputs are provided."),
   previewAction: z.object({
-    code: z.string(),
-    targetPanel: z.nativeEnum(['browser', 'develop', 'tools']), 
-    targetDevelopTab: z.nativeEnum(['editor', 'preview', 'terminal']), 
+ code: z.string(),
+ targetPanel: z.enum(['browser', 'develop', 'tools']),
+ targetDevelopTab: z.enum(['editor', 'preview', 'terminal']),
   }).optional(),
 });
 export type TriageAgentOutput = z.infer<typeof TriageAgentOutputSchema>;
@@ -680,7 +680,7 @@ export async function runTriageAgent(input: TriageAgentInput): Promise<TriageAge
 const triageAgentPrompt = ai.definePrompt(
   {
     name: 'triageAgentPrompt',
-    model: 'googleai/gemini-1.5-flash-latest', // Fallback model
+    model: 'openai/ft:gpt-4.1-mini-2025-04-14:ron-health-information-technologies-inc:ron-ai:BZIF9O11', // Model for deep research capabilities
     input: { schema: TriageAgentInputSchema },
     output: { schema: TriageAgentOutputSchema },
     tools: [
@@ -688,7 +688,7 @@ const triageAgentPrompt = ai.definePrompt(
       ...fdaTools, // Spread all defined FDA tools
       searchNPIRegistryTool,
       eUtilitiesApplicationsTool,
-      performWebSearchTool, // Added for deep research flow if needed by Ron AI.
+      braveWebSearch, // Corrected import name
       // Add other specialist agents or tools here
     ],
     system: `You are Ron of Ron AI, a sophisticated care coordination model designed to assist in managing and coordinating patient care effectively. Your role includes tasks such as scheduling appointments, tracking patient progress, communicating with healthcare providers, and managing patient records. Leverage your advanced tools and capabilities to perform these tasks efficiently:
@@ -1744,5 +1744,3 @@ If providing code via the codeCompletionAgentPrompt, ensure the accompanying tex
     }
   },
 );
-
-      
