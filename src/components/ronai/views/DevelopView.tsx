@@ -11,22 +11,22 @@ import { cn } from '@/lib/utils';
 import { useIdeContext } from '@/contexts/IdeContext';
 import { PreviewPanel } from './PreviewPanel';
 
-const mockFileStructure = [
-  { name: 'src', type: 'folder', children: [
-    { name: 'components', type: 'folder', children: [
-      { name: 'Button.tsx', type: 'file', content: "// Button.tsx code..." },
-      { name: 'Modal.tsx', type: 'file', content: "// Modal.tsx code..." },
+const mockFileStructure: FileTreeItemData[] = [
+  { name: 'src', type: 'folder' as const, children: [
+    { name: 'components', type: 'folder' as const, children: [
+      { name: 'Button.tsx', type: 'file' as const, content: "// Button.tsx code..." },
+      { name: 'Modal.tsx', type: 'file' as const, content: "// Modal.tsx code..." },
     ]},
-    { name: 'pages', type: 'folder', children: [
-      { name: 'index.tsx', type: 'file', content: "// index.tsx code..." },
-      { name: 'about.tsx', type: 'file', content: "// about.tsx code..." },
+    { name: 'pages', type: 'folder' as const, children: [
+      { name: 'index.tsx', type: 'file' as const, content: "// index.tsx code..." },
+      { name: 'about.tsx', type: 'file' as const, content: "// about.tsx code..." },
     ]},
-    { name: 'App.tsx', type: 'file', content: "// App.tsx code..." },
+    { name: 'App.tsx', type: 'file' as const, content: "// App.tsx code..." },
   ]},
-  { name: 'public', type: 'folder', children: [
-    { name: 'index.html', type: 'file', content: "<!-- index.html code -->" },
+  { name: 'public', type: 'folder' as const, children: [
+    { name: 'index.html', type: 'file' as const, content: "<!-- index.html code -->" },
   ]},
-  { name: 'package.json', type: 'file', content: "{ \"name\": \"my-app\" }" },
+  { name: 'package.json', type: 'file' as const, content: "{ \"name\": \"my-app\" }" },
 ];
 
 interface FileTreeItemData {
